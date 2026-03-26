@@ -170,88 +170,134 @@ export default function AIGeneratePanel() {
 
 /* ── Generator helpers ────────────────────────────────────────────────────── */
 
+/**
+ * Detect if the prompt matches a specialized template we already have
+ */
+function detectTemplate(prompt: string): string | null {
+  const p = prompt.toLowerCase();
+  if (/debt|loan|snowball|avalanche|payoff|repay/.test(p)) return 'debt-tracker';
+  if (/budget|expense|spending|chi.ti.u|chi ph/.test(p)) return 'budget-tracker';
+  if (/saving|savings goal|tiet kiem|ti.t ki.m/.test(p)) return 'savings-tracker';
+  if (/invoice|freelance|client|billing|payment.track/.test(p)) return 'invoice-tracker';
+  return null;
+}
+
 async function buildExcel(data: Record<string, unknown>, prompt: string) {
+  // Route to specialized generators for known templates
+  const template = detectTemplate(prompt);
+  if (template === 'debt-tracker') {
+    const { generateStyledDebtTracker } = await import('@/lib/styled-debt-tracker');
+    await generateStyledDebtTracker(undefined, 'Debt_Dashboard');
+    return;
+  }
+
+  if (template === 'budget-tracker') {
+    const { generateBudgetTrackerBundle } = await import('@/lib/spreadsheet-generator');
+    await generateBudgetTrackerBundle('Monthly_Budget_Tracker');
+    return;
+  }
+  if (template === 'savings-tracker') {
+    const { generateSavingsTrackerBundle } = await import('@/lib/spreadsheet-generator');
+    await generateSavingsTrackerBundle('Savings_Goal_Tracker');
+    return;
+  }
+  if (template === 'invoice-tracker') {
+    const { generateInvoiceTrackerBundle } = await import('@/lib/spreadsheet-generator');
+    await generateInvoiceTrackerBundle('Invoice_Tracker');
+    return;
+  }
+
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const XLSX: any = await import('xlsx');
   const JSZip = (await import('jszip')).default;
 
-  const title = (data.title as string) || prompt.slice(0, 40);
+  const title = (data.title as string) || prompt.slice(0, 40) || 'Spreadsheet';
   const slug = title.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_');
-  const sheets = (data.sheets as Array<{ name: string; headers: string[]; sampleRows: string[][]; description?: string }>) || [];
+  const sheets = (data.sheets as Array<{
+    name: string;
+    headers: string[];
+    sampleRows: (string | number | null)[][];
+  }>) || [];
 
-  const themes = [
-    { header: [79, 70, 229], accent: [238, 242, 255] },
-    { header: [13, 148, 136], accent: [240, 253, 250] },
-    { header: [225, 29, 72], accent: [255, 241, 242] },
-  ];
-  const theme = themes[Math.abs(title.charCodeAt(0) % themes.length)];
+  if (sheets.length === 0) throw new Error('No sheet data returned from AI. Please try again.');
 
-  function toHex(rgb: number[]) { return rgb.map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase(); }
-
-  // Build workbook
-  const wb = XLSX.utils.book_new();
+  /* ── Build SAMPLE workbook (data included) ── */
+  const sampleWb = XLSX.utils.book_new();
   for (const sh of sheets) {
-    const rows = [sh.headers, ...sh.sampleRows];
-    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Ensure sampleRows is always an array
+    const dataRows = Array.isArray(sh.sampleRows) ? sh.sampleRows : [];
+    const allRows = [sh.headers, ...dataRows];
 
-    // Style headers
-    sh.headers.forEach((_: unknown, ci: number) => {
-      const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
-      if (!ws[addr]) return;
-      ws[addr].s = {
-        font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-        fill: { fgColor: { rgb: toHex(theme.header) }, patternType: 'solid' },
-        alignment: { horizontal: 'center', vertical: 'center' },
-      };
-    });
+    // Use aoa_to_sheet — no styling (standard SheetJS doesn't support .s)
+    const ws = XLSX.utils.aoa_to_sheet(allRows);
 
-    // Alternating data rows
-    for (let ri = 1; ri < rows.length; ri++) {
-      sh.headers.forEach((_: unknown, ci: number) => {
-        const addr = XLSX.utils.encode_cell({ r: ri, c: ci });
-        if (!ws[addr]) return;
-        ws[addr].s = {
-          fill: { fgColor: { rgb: ri % 2 === 0 ? toHex(theme.accent) : 'FFFFFF' }, patternType: 'solid' },
-          font: { sz: 10 }, alignment: { vertical: 'center' },
-        };
-      });
-    }
+    // Set column widths
+    ws['!cols'] = sh.headers.map((h: string) => ({
+      wch: Math.max(typeof h === 'string' ? h.length + 4 : 12, 14),
+    }));
 
-    ws['!cols'] = sh.headers.map((h: string) => ({ wch: Math.max(h.length + 4, 14) }));
+    // Freeze top row
     ws['!freeze'] = { xSplit: 0, ySplit: 1 };
-    XLSX.utils.book_append_sheet(wb, ws, sh.name.slice(0, 31));
+
+    XLSX.utils.book_append_sheet(sampleWb, ws, sh.name.slice(0, 31));
   }
+  const sampleBuf: ArrayBuffer = XLSX.write(sampleWb, {
+    type: 'array',
+    bookType: 'xlsx',
+    bookSST: false,
+  });
 
-  // Build ZIP with sample + blank
-  const sampleBuf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-
-  // Blank version — headers only
+  /* ── Build BLANK workbook (headers only) ── */
   const blankWb = XLSX.utils.book_new();
   for (const sh of sheets) {
     const ws = XLSX.utils.aoa_to_sheet([sh.headers]);
-    sh.headers.forEach((_: unknown, ci: number) => {
-      const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
-      if (!ws[addr]) return;
-      ws[addr].s = { font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 }, fill: { fgColor: { rgb: toHex(theme.header) }, patternType: 'solid' }, alignment: { horizontal: 'center', vertical: 'center' } };
-    });
-    ws['!cols'] = sh.headers.map((h: string) => ({ wch: Math.max(h.length + 4, 14) }));
+    ws['!cols'] = sh.headers.map((h: string) => ({
+      wch: Math.max(typeof h === 'string' ? h.length + 4 : 12, 14),
+    }));
     ws['!freeze'] = { xSplit: 0, ySplit: 1 };
     XLSX.utils.book_append_sheet(blankWb, ws, sh.name.slice(0, 31));
   }
-  const blankBuf = XLSX.write(blankWb, { type: 'array', bookType: 'xlsx' });
+  const blankBuf: ArrayBuffer = XLSX.write(blankWb, {
+    type: 'array',
+    bookType: 'xlsx',
+    bookSST: false,
+  });
 
+  /* ── Package as ZIP ── */
   const zip = new JSZip();
   const folder = zip.folder(slug)!;
   folder.file(`Sample_${slug}.xlsx`, sampleBuf);
   folder.file(`Blank_${slug}.xlsx`, blankBuf);
-  folder.file('README.txt', `${title}\n\nCreated from prompt: "${prompt}"\n\nFiles:\n- Sample_${slug}.xlsx: pre-filled with example data\n- Blank_${slug}.xlsx: headers only, ready to fill\n\nOpen with Microsoft Excel or Google Sheets.`);
+  folder.file(
+    'README.txt',
+    [
+      title,
+      '='.repeat(40),
+      '',
+      `Created from: "${prompt.slice(0, 120)}"`,
+      '',
+      'FILES:',
+      `  Sample_${slug}.xlsx  — pre-filled with example data`,
+      `  Blank_${slug}.xlsx   — headers only, ready to fill`,
+      '',
+      'Open with Microsoft Excel or upload to Google Drive → Open with Google Sheets.',
+    ].join('\n'),
+  );
 
-  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 },
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `${slug}.zip`;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
+  a.href = url;
+  a.download = `${slug}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function buildPdf(data: Record<string, unknown>, prompt: string) {
@@ -263,9 +309,12 @@ async function buildPdf(data: Record<string, unknown>, prompt: string) {
   await generateResumePDF({
     niche: (data.niche as string) || prompt.slice(0, 40),
     title: (data.title as string) || prompt.slice(0, 50),
-    summary: (data.summary as string) || `${prompt.slice(0, 60)} professional with a track record of excellence.`,
+    summary:
+      (data.summary as string) ||
+      `${prompt.slice(0, 60)} professional with a track record of excellence.`,
     imageUrl: null,
     fontPair: FONT_PAIRS[Math.floor(Math.random() * FONT_PAIRS.length)],
     pageCount: 1,
   });
 }
+

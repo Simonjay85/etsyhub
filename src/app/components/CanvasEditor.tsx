@@ -363,6 +363,7 @@ export default function CanvasEditor() {
             <button onClick={resetAiState} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '9px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}>Generate Another</button>
           </div>
         )}
+        </>)}
       </div>
     </div>
   );
