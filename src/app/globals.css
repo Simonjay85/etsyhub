@@ -78,6 +78,9 @@ a {
   margin-left: var(--nav-width);
   padding: 2rem;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Scrollbar styling */

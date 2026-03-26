@@ -10,6 +10,8 @@ import {
 import { generateResumePDF } from '@/lib/pdf-generator';
 import { generateBundle } from '@/lib/bundle-generator';
 import { generateDebtTrackerBundle } from '@/lib/spreadsheet-generator';
+import SpreadsheetImporter from './SpreadsheetImporter';
+import type { ImportResult } from '@/lib/sheet-parser';
 
 type AIState = 'idle' | 'uploading' | 'scanning' | 'ready' | 'generating' | 'done';
 type OutputMode = 'single' | 'bundle';
@@ -46,6 +48,7 @@ export default function CanvasEditor() {
   const [targetNiche, setTargetNiche] = useState('Creative Director');
   const [outputMode, setOutputMode] = useState<OutputMode>('bundle');
   const [productType, setProductType] = useState<ProductType>('resume');
+  const [importedData, setImportedData] = useState<ImportResult | null>(null);
   const [selectedPair, setSelectedPair] = useState(FONT_PAIRS[0]);
   const [showFontDropdown, setShowFontDropdown] = useState(false);
   const [doneFiles, setDoneFiles] = useState<string[]>([]);
@@ -88,10 +91,9 @@ export default function CanvasEditor() {
     canvas.renderAll();
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
-    setAiState('uploading');
-    setTimeout(() => { setAiState('scanning'); setTimeout(() => setAiState('ready'), 2000); }, 1000);
+  const handleImportDone = (result: ImportResult) => {
+    setImportedData(result);
+    setAiState('ready');
   };
 
   const handleGenerate = async () => {
@@ -141,20 +143,20 @@ export default function CanvasEditor() {
   const resetAiState = () => { setAiState('idle'); setTargetNiche('Creative Director'); setDoneFiles([]); setGeneratingStep(''); };
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100%', gap: '1rem' }}>
+    <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: '1rem', alignItems: 'stretch' }}>
       {/* Left Toolbar */}
-      <div className="glass-panel" style={{ width: '80px', padding: '1rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+      <div className="glass-panel" style={{ width: '64px', padding: '0.75rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
         {[{ Icon: Type, fn: addText, title: 'Add Text' }, { Icon: Square, fn: addRect, title: 'Add Rect' }, { Icon: Circle, fn: addCircle, title: 'Add Circle' }].map(({ Icon, fn, title }) => (
-          <button key={title} onClick={fn} title={title} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '12px', borderRadius: '8px' }}><Icon size={24} /></button>
+          <button key={title} onClick={fn} title={title} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '10px', borderRadius: '8px' }}><Icon size={22} /></button>
         ))}
-        <div style={{ height: '1px', width: '40px', background: 'var(--glass-border)' }} />
-        <button title="Add Image" onClick={() => alert('Drag an image file onto the canvas')} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '12px', borderRadius: '8px' }}><ImageIcon size={24} /></button>
+        <div style={{ height: '1px', width: '36px', background: 'var(--glass-border)' }} />
+        <button title="Add Image" onClick={() => alert('Drag an image file onto the canvas')} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '10px', borderRadius: '8px' }}><ImageIcon size={22} /></button>
         <div style={{ flexGrow: 1 }} />
-        <button onClick={handleExport} title="Export canvas PNG" style={{ background: 'linear-gradient(135deg,var(--accent-1),var(--accent-2))', border: 'none', color: 'white', cursor: 'pointer', padding: '12px', borderRadius: '8px' }}><Download size={24} /></button>
+        <button onClick={handleExport} title="Export canvas PNG" style={{ background: 'linear-gradient(135deg,var(--accent-1),var(--accent-2))', border: 'none', color: 'white', cursor: 'pointer', padding: '10px', borderRadius: '8px' }}><Download size={22} /></button>
       </div>
 
       {/* Canvas */}
-      <div ref={wrapperRef} className="glass-panel" style={{ flexGrow: 1, position: 'relative', overflow: 'hidden' }}>
+      <div ref={wrapperRef} className="glass-panel" style={{ flex: 1, minWidth: 0, position: 'relative', overflow: 'hidden' }}>
         <canvas ref={canvasRef} />
       </div>
 
@@ -183,27 +185,12 @@ export default function CanvasEditor() {
 
         <div style={{ height: '1px', background: 'var(--glass-border)' }} />
 
-        {/* IDLE */}
+
+        {/* IDLE — Spreadsheet/Excel/Google Sheets Import */}
         {aiState === 'idle' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>Upload a PDF template — AI clones it into a new professional layout for a different niche.</p>
-            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--glass-border)', borderRadius: '12px', padding: '1.75rem', cursor: 'pointer' }}>
-              <UploadCloud size={28} style={{ color: 'var(--accent-1)', marginBottom: '0.75rem' }} />
-              <span style={{ fontSize: '0.8rem', fontWeight: 500, textAlign: 'center' }}>Click to upload PDF<br /><span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>or drag and drop</span></span>
-              <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={handleFileUpload} />
-            </label>
-          </div>
+          <SpreadsheetImporter onImportDone={handleImportDone} />
         )}
 
-        {/* UPLOADING / SCANNING */}
-        {(aiState === 'uploading' || aiState === 'scanning') && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 0', gap: '1rem' }}>
-            <style>{`@keyframes spin{100%{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
-            {aiState === 'uploading'
-              ? <><RefreshCw size={28} style={{ color: 'var(--accent-1)', animation: 'spin 1s linear infinite' }} /><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Uploading document…</span></>
-              : <><FileText size={28} style={{ color: 'var(--accent-2)', animation: 'pulse 1.5s ease infinite' }} /><span style={{ fontSize: '0.8rem', color: 'var(--accent-2)', textAlign: 'center' }}>Analysing layout & fonts…<br /><span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Detecting text & image zones</span></span></>}
-          </div>
-        )}
 
         {/* READY */}
         {aiState === 'ready' && (
