@@ -10,12 +10,15 @@ import {
 import { generateResumePDF } from '@/lib/pdf-generator';
 import { generateBundle } from '@/lib/bundle-generator';
 import { generateDebtTrackerBundle } from '@/lib/spreadsheet-generator';
+import { cloneSpreadsheet } from '@/lib/clone-spreadsheet';
 import SpreadsheetImporter from './SpreadsheetImporter';
+import AIGeneratePanel from './AIGeneratePanel';
 import type { ImportResult } from '@/lib/sheet-parser';
 
 type AIState = 'idle' | 'uploading' | 'scanning' | 'ready' | 'generating' | 'done';
 type OutputMode = 'single' | 'bundle';
 type ProductType = 'resume' | 'spreadsheet';
+type StudioMode = 'generate' | 'clone';
 
 const FONT_PAIRS = [
   { label: 'Montserrat + Lato', heading: 'Montserrat', body: 'Lato' },
@@ -45,7 +48,9 @@ export default function CanvasEditor() {
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
 
   const [aiState, setAiState] = useState<AIState>('idle');
+  const [studioMode, setStudioMode] = useState<StudioMode>('generate');
   const [targetNiche, setTargetNiche] = useState('Creative Director');
+  const [productName, setProductName] = useState('');
   const [outputMode, setOutputMode] = useState<OutputMode>('bundle');
   const [productType, setProductType] = useState<ProductType>('resume');
   const [importedData, setImportedData] = useState<ImportResult | null>(null);
@@ -93,6 +98,9 @@ export default function CanvasEditor() {
 
   const handleImportDone = (result: ImportResult) => {
     setImportedData(result);
+    // Auto-fill product name from filename
+    const guess = result.filename.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ');
+    setProductName(guess);
     setAiState('ready');
   };
 
@@ -102,9 +110,18 @@ export default function CanvasEditor() {
     setDoneFiles([]);
 
     if (productType === 'spreadsheet') {
-      setGeneratingStep('Building Excel workbooks…');
-      await generateDebtTrackerBundle('Debt_Payoff_Tracker');
-      setDoneFiles(['Debt_Payoff_Tracker_Bundle.zip']);
+      if (importedData) {
+        // Clone the imported spreadsheet
+        setGeneratingStep('Cloning spreadsheet structure…');
+        await cloneSpreadsheet(importedData, productName || importedData.filename);
+        const slug = (productName || importedData.filename).replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_');
+        setDoneFiles([`${slug}_Bundle.zip`]);
+      } else {
+        // Fallback: generate the built-in Debt Tracker
+        setGeneratingStep('Building Debt Payoff Tracker…');
+        await generateDebtTrackerBundle('Debt_Payoff_Tracker');
+        setDoneFiles(['Debt_Payoff_Tracker_Bundle.zip']);
+      }
       setAiState('done');
       return;
     }
@@ -185,8 +202,23 @@ export default function CanvasEditor() {
 
         <div style={{ height: '1px', background: 'var(--glass-border)' }} />
 
+        {/* Mode switcher */}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button onClick={() => setStudioMode('generate')} style={{ flex: 1, padding: '8px 6px', borderRadius: '8px', border: `1px solid ${studioMode === 'generate' ? 'var(--accent-2)' : 'var(--glass-border)'}`, background: studioMode === 'generate' ? 'rgba(236,72,153,0.12)' : 'transparent', color: studioMode === 'generate' ? 'var(--accent-2)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: studioMode === 'generate' ? 700 : 400, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+            <Sparkles size={12} />AI Generate
+          </button>
+          <button onClick={() => setStudioMode('clone')} style={{ flex: 1, padding: '8px 6px', borderRadius: '8px', border: `1px solid ${studioMode === 'clone' ? 'var(--accent-1)' : 'var(--glass-border)'}`, background: studioMode === 'clone' ? 'rgba(139,92,246,0.12)' : 'transparent', color: studioMode === 'clone' ? 'var(--accent-1)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: studioMode === 'clone' ? 700 : 400, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+            <Layers size={12} />Import & Clone
+          </button>
+        </div>
 
-        {/* IDLE — Spreadsheet/Excel/Google Sheets Import */}
+        <div style={{ height: '1px', background: 'var(--glass-border)' }} />
+
+        {/* ── AI GENERATE mode ── */}
+        {studioMode === 'generate' && <AIGeneratePanel />}
+
+        {/* ── IMPORT & CLONE mode ── */}
+        {studioMode === 'clone' && (<>
         {aiState === 'idle' && (
           <SpreadsheetImporter onImportDone={handleImportDone} />
         )}
@@ -213,15 +245,45 @@ export default function CanvasEditor() {
               </div>
             </div>
 
-            {/* Spreadsheet info */}
+
+            {/* Spreadsheet clone controls */}
             {productType === 'spreadsheet' && (
-              <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '8px', padding: '10px 12px', fontSize: '0.75rem', color: '#10b981', lineHeight: 1.6 }}>
-                <strong>📊 Debt Payoff Tracker Bundle</strong><br />
-                <span style={{ color: 'var(--text-secondary)' }}>
-                  Sample.xlsx (mock data) + Blank.xlsx + Instructions PDF + README — packaged as ZIP, ready to sell on Etsy!
-                </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {/* Imported file summary */}
+                {importedData ? (
+                  <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#10b981', marginBottom: '4px' }}>
+                      📂 {importedData.filename}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                      {importedData.sheets.map(s => `${s.name} (${s.rowCount} rows)`).join('  ·  ')}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                    No file imported — will generate Debt Payoff Tracker as default
+                  </div>
+                )}
+
+                {/* Product name */}
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Product Name</label>
+                  <input
+                    type="text"
+                    value={productName}
+                    onChange={e => setProductName(e.target.value)}
+                    placeholder="e.g. Budget Planner 2025"
+                    style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white', padding: '9px 12px', borderRadius: '8px', fontSize: '0.8rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                {/* Output description */}
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '8px 10px', lineHeight: 1.7 }}>
+                  Downloads: <strong style={{ color: 'white' }}>Sample.xlsx</strong> (with data) + <strong style={{ color: 'white' }}>Blank.xlsx</strong> (headers only) + <strong style={{ color: 'white' }}>Instructions PDF</strong> — all in a ZIP
+                </div>
               </div>
             )}
+
 
             {/* Resume-only controls */}
             {productType === 'resume' && (
