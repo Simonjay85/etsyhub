@@ -1,0 +1,332 @@
+/**
+ * spreadsheet-generator.ts — Debt Payoff Tracker product bundle generator.
+ * Uses SheetJS (xlsx) to build Sample + Blank Excel workbooks, plus a PDF guide,
+ * all packaged into a ZIP for Etsy delivery.
+ */
+
+/* ─── Types ─────────────────────────────────────────────────────────────── */
+interface Debt {
+  name: string;
+  balance: number;
+  rate: number;
+  minPayment: number;
+  category: string;
+}
+
+/* ─── Sample data ──────────────────────────────────────────────────────── */
+const SAMPLE_DEBTS: Debt[] = [
+  { name: 'Credit Card A', balance: 4800, rate: 22.99, minPayment: 120, category: 'Credit Card' },
+  { name: 'Credit Card B', balance: 2200, rate: 18.99, minPayment: 55, category: 'Credit Card' },
+  { name: 'Car Loan', balance: 11500, rate: 6.9, minPayment: 240, category: 'Auto' },
+  { name: 'Student Loan', balance: 18000, rate: 5.5, minPayment: 180, category: 'Student' },
+  { name: 'Medical Bill', balance: 950, rate: 0, minPayment: 50, category: 'Medical' },
+  { name: 'Personal Loan', balance: 3500, rate: 12.5, minPayment: 85, category: 'Personal' },
+];
+
+/* ─── Sheet builders (all XLSX operations are via imported `XLSX` — typed as any) ── */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildDashboard(XLSX: any, debts: Debt[]) {
+  const totalDebt = debts.reduce((s, d) => s + d.balance, 0);
+  const totalMin = debts.reduce((s, d) => s + d.minPayment, 0);
+  const avgRate = debts.length ? debts.reduce((s, d) => s + d.rate, 0) / debts.length : 0;
+
+  const rows = [
+    ['💛  DEBT PAYOFF TRACKER', '', '', '', '', ''],
+    ['Track your journey to a debt-free life', '', '', '', '', ''],
+    [''],
+    ['OVERVIEW', '', '', '', '', 'QUICK STATS', ''],
+    ['Total Debt', totalDebt, '', '', '', 'Debts Tracked', debts.length],
+    ['Total Min. Payments/mo', totalMin, '', '', '', 'Avg. Interest Rate', avgRate / 100],
+    ['Extra Payment Budget (edit me!)', 0, '', '', '', 'Est. Interest Saved', ''],
+    [''],
+    ['💡 TIP: Enter your extra monthly payment in column B row 7 to see a faster payoff!'],
+    [''],
+    ['Debt Name', 'Balance ($)', 'Interest Rate', 'Min. Payment ($)', 'Category', '% of Total'],
+    ...debts.map(d => [d.name, d.balance, d.rate / 100, d.minPayment, d.category, totalDebt ? d.balance / totalDebt : 0]),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // Number formats
+  const fmtMoney = '"$"#,##0.00';
+  const fmtPct = '0.00%';
+  if (ws['B5']) ws['B5'].z = fmtMoney;
+  if (ws['B6']) ws['B6'].z = fmtMoney;
+  if (ws['B7']) ws['B7'].z = fmtMoney;
+  if (ws['C7']) ws['C7'].z = fmtPct;
+  debts.forEach((_, i) => {
+    const r = i + 12;
+    if (ws[`B${r}`]) ws[`B${r}`].z = fmtMoney;
+    if (ws[`C${r}`]) ws[`C${r}`].z = fmtPct;
+    if (ws[`D${r}`]) ws[`D${r}`].z = fmtMoney;
+    if (ws[`F${r}`]) ws[`F${r}`].z = fmtPct;
+  });
+
+  ws['!cols'] = [{ wch: 26 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 16 }];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } },
+    { s: { r: 8, c: 0 }, e: { r: 8, c: 5 } },
+  ];
+  return ws;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildDebtSetup(XLSX: any, debts: Debt[]) {
+  const rows = [
+    ['💳  DEBT SETUP — Enter your debts below (up to 50)'],
+    ['Name your debts, enter balances, interest rates, and minimum monthly payments.'],
+    [''],
+    ['#', 'Debt Name', 'Current Balance ($)', 'Annual Interest Rate (%)', 'Min. Monthly Payment ($)', 'Category', 'Notes'],
+    ...debts.map((d, i) => [i + 1, d.name, d.balance, d.rate / 100, d.minPayment, d.category, '']),
+    ...Array.from({ length: Math.max(0, 50 - debts.length) }, (_, i) => [debts.length + i + 1, '', '', '', '', '', '']),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  debts.forEach((_, i) => {
+    const r = i + 5;
+    if (ws[`C${r}`]) ws[`C${r}`].z = '"$"#,##0.00';
+    if (ws[`D${r}`]) ws[`D${r}`].z = '0.00%';
+    if (ws[`E${r}`]) ws[`E${r}`].z = '"$"#,##0.00';
+  });
+  ws['!cols'] = [{ wch: 4 }, { wch: 24 }, { wch: 20 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 32 }];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+  ];
+  return ws;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildPayoffSchedule(XLSX: any, debts: Debt[], method: 'snowball' | 'avalanche', extraPayment = 200) {
+  const sorted = [...debts].sort((a, b) =>
+    method === 'snowball' ? a.balance - b.balance : b.rate - a.rate
+  );
+  const icon = method === 'snowball' ? '❄️' : '🔥';
+  const label = method === 'snowball' ? 'SNOWBALL (Smallest Balance First)' : 'AVALANCHE (Highest Interest First)';
+  const desc = method === 'snowball'
+    ? 'Pay minimums on all debts, then put ALL extra money toward the SMALLEST balance.'
+    : 'Pay minimums on all debts, then put ALL extra money toward the HIGHEST interest rate.';
+
+  const balances = sorted.map(d => d.balance);
+  const schedule: (string | number)[][] = [];
+  let month = 0;
+
+  while (balances.some(b => b > 0.01) && month < 120) {
+    month++;
+    let extra = extraPayment;
+    const row: (string | number)[] = [`Month ${month}`];
+
+    for (let i = 0; i < sorted.length; i++) {
+      if (balances[i] <= 0) { row.push(0, 0); continue; }
+      const interest = (balances[i] * (sorted[i].rate / 100)) / 12;
+      const payment = Math.min(sorted[i].minPayment, balances[i] + interest);
+      balances[i] = Math.max(0, balances[i] + interest - payment);
+      row.push(Number(payment.toFixed(2)), Number(balances[i].toFixed(2)));
+    }
+
+    for (let i = 0; i < sorted.length; i++) {
+      if (balances[i] > 0 && extra > 0) {
+        const applied = Math.min(extra, balances[i]);
+        balances[i] = Math.max(0, balances[i] - applied);
+        extra -= applied;
+        row[i * 2 + 2] = Number(((row[i * 2 + 2] as number) + applied).toFixed(2));
+        row[i * 2 + 3] = Number(balances[i].toFixed(2));
+        break;
+      }
+    }
+    schedule.push(row);
+  }
+
+  const headers = ['Month', ...sorted.flatMap(d => [`Payment: ${d.name}`, `Balance: ${d.name}`])];
+  const rows = [
+    [`${icon} ${label}`],
+    [desc],
+    [`Extra Monthly Payment: $${extraPayment} → Payoff in approx. ${month} months (${(month / 12).toFixed(1)} years)`],
+    [''],
+    headers,
+    ...schedule,
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 10 }, ...sorted.flatMap(() => [{ wch: 18 }, { wch: 18 }])];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: headers.length - 1 } },
+  ];
+  return ws;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildMonthlyJournal(XLSX: any) {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const rows = [
+    ['📓  MONTHLY JOURNAL & PROGRESS TRACKER'],
+    ['Record your payments and reflections each month to stay motivated!'],
+    [''],
+    ['Month', 'Year', 'Total Paid ($)', 'Remaining Balance ($)', 'Extra Payments ($)', 'Debts Eliminated', 'Notes & Reflections', 'Mood', 'On Track?'],
+    ...([2026, 2027, 2028].flatMap(y => months.map(m => [m, y, '', '', '', 0, '', '😊', '✅']))),
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 12 }, { wch: 6 }, { wch: 14 }, { wch: 20 }, { wch: 18 }, { wch: 16 }, { wch: 42 }, { wch: 8 }, { wch: 10 }];
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }];
+  return ws;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildInstructions(XLSX: any) {
+  const rows = [
+    ['📖  DEBT PAYOFF TRACKER — STEP-BY-STEP GUIDE'],
+    [''],
+    ['STEP 1 — SET UP YOUR DEBTS'],
+    ['Go to the "Debt Setup" tab and enter each debt: name, balance, interest rate, and minimum payment.'],
+    [''],
+    ['STEP 2 — PICK YOUR STRATEGY'],
+    ['• ❄️ Snowball: Smallest balance first → quick psychological wins and momentum'],
+    ['• 🔥 Avalanche: Highest interest first → saves the most money over time'],
+    [''],
+    ['STEP 3 — SET EXTRA PAYMENT (Dashboard, row 7)'],
+    ['Enter any extra amount you can pay monthly. The schedules update to show your new payoff date.'],
+    [''],
+    ['STEP 4 — TRACK MONTHLY PROGRESS'],
+    ['Use the "Monthly Journal" tab to log payments, milestones, and notes each month.'],
+    [''],
+    ['STEP 5 — CELEBRATE WINS!'],
+    ['Every debt you eliminate frees up more money for the next one. Use that momentum!'],
+    [''],
+    ['─────────────────────────────────────'],
+    ['KEY FEATURES'],
+    ['• Track up to 50 debts over up to 50 years'],
+    ['• Works with any currency — just replace $ with your symbol'],
+    ['• Automatic interest and payoff calculations'],
+    ['• Compatible with Mac, PC, iOS, and Android'],
+    [''],
+    ['─────────────────────────────────────'],
+    ['IMPORTANT NOTES'],
+    ['• Digital download only — no physical item shipped'],
+    ['• All sales final (digital products)'],
+    ['• Colors may vary slightly on different screens'],
+    [''],
+    ['Thank you for your purchase! Share your debt-free journey! 💛'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 90 }];
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 0 } }];
+  return ws;
+}
+
+/* ─── Main bundle export ─────────────────────────────────────────────────── */
+export async function generateDebtTrackerBundle(productName = 'Debt_Payoff_Tracker'): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const XLSX: any = await import('xlsx');
+  const JSZip = (await import('jszip')).default;
+  const { jsPDF } = await import('jspdf');
+
+  const slug = productName.replace(/\s+/g, '_');
+
+  // ── Sample workbook ──────────────────────────────────────────────────────
+  const sampleWb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(sampleWb, buildDashboard(XLSX, SAMPLE_DEBTS), '📊 Dashboard');
+  XLSX.utils.book_append_sheet(sampleWb, buildDebtSetup(XLSX, SAMPLE_DEBTS), '💳 Debt Setup');
+  XLSX.utils.book_append_sheet(sampleWb, buildPayoffSchedule(XLSX, SAMPLE_DEBTS, 'snowball'), '❄️ Snowball');
+  XLSX.utils.book_append_sheet(sampleWb, buildPayoffSchedule(XLSX, SAMPLE_DEBTS, 'avalanche'), '🔥 Avalanche');
+  XLSX.utils.book_append_sheet(sampleWb, buildMonthlyJournal(XLSX), '📓 Monthly Journal');
+  XLSX.utils.book_append_sheet(sampleWb, buildInstructions(XLSX), '📖 Instructions');
+  const sampleBuf = XLSX.write(sampleWb, { type: 'array', bookType: 'xlsx' });
+
+  // ── Blank workbook ───────────────────────────────────────────────────────
+  const blankWb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(blankWb, buildDashboard(XLSX, []), '📊 Dashboard');
+  XLSX.utils.book_append_sheet(blankWb, buildDebtSetup(XLSX, []), '💳 Debt Setup');
+  XLSX.utils.book_append_sheet(blankWb, buildPayoffSchedule(XLSX, [], 'snowball', 0), '❄️ Snowball');
+  XLSX.utils.book_append_sheet(blankWb, buildPayoffSchedule(XLSX, [], 'avalanche', 0), '🔥 Avalanche');
+  XLSX.utils.book_append_sheet(blankWb, buildMonthlyJournal(XLSX), '📓 Monthly Journal');
+  XLSX.utils.book_append_sheet(blankWb, buildInstructions(XLSX), '📖 Instructions');
+  const blankBuf = XLSX.write(blankWb, { type: 'array', bookType: 'xlsx' });
+
+  // ── Instructions PDF ─────────────────────────────────────────────────────
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+
+  doc.setFillColor(251, 191, 36);
+  doc.rect(0, 0, W, 8, 'F');
+  doc.setFillColor(79, 70, 229);
+  doc.rect(0, 8, W, 40, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255);
+  doc.text('Debt Payoff Tracker', W / 2, 30, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(196, 181, 253);
+  doc.text('Your step-by-step guide to becoming debt-free', W / 2, 40, { align: 'center' });
+
+  const sections = [
+    { title: "What's Included", items: ['Sample Excel (.xlsx) with mock data', 'Blank Excel (.xlsx) — ready to fill in', 'Step-by-step Instructions PDF', 'README.txt with quick-start guide'] },
+    { title: 'How to Get Started', items: ['1. Open the Excel file (or upload to Google Drive)', '2. Enter your debts in the "Debt Setup" tab', '3. Choose Snowball or Avalanche strategy', '4. Set your extra payment on the Dashboard', '5. Log monthly progress in the Journal tab'] },
+    { title: 'Repayment Methods', items: ['❄️  Snowball — Smallest balance first (psychological wins)', '🔥  Avalanche — Highest interest first (saves most money)', '🎯  Custom — Arrange debts in any order you prefer'] },
+    { title: 'Key Features', items: ['Track up to 50 debts over 50 years', 'Works with any currency worldwide', 'Automatic interest & payoff date calculations', 'Monthly journal tab for tracking & reflection'] },
+  ];
+
+  let y = 58;
+  for (const sec of sections) {
+    doc.setFillColor(238, 242, 255);
+    doc.rect(14, y - 3, W - 28, 7, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(79, 70, 229);
+    doc.text(sec.title.toUpperCase(), 18, y + 2);
+    y += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(55, 65, 81);
+    for (const item of sec.items) { doc.text(`• ${item}`, 18, y); y += 6; }
+    y += 4;
+  }
+
+  doc.setFillColor(251, 191, 36);
+  doc.rect(0, H - 12, W, 12, 'F');
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(79, 70, 229);
+  doc.text('Thank you for your purchase! 💛  Share your debt-free journey and inspire others!', W / 2, H - 5, { align: 'center' });
+
+  const pdfBuf = doc.output('arraybuffer');
+
+  // ── ZIP ──────────────────────────────────────────────────────────────────
+  const zip = new JSZip();
+  const folder = zip.folder(slug)!;
+  folder.file(`Sample_${slug}.xlsx`, sampleBuf);
+  folder.file(`Blank_${slug}.xlsx`, blankBuf);
+  folder.file('Instructions_Guide.pdf', pdfBuf);
+  folder.file('README.txt', [
+    `${productName.replace(/_/g, ' ')} — Digital Download`,
+    '='.repeat(40),
+    '',
+    'FILES INCLUDED:',
+    `  • Sample_${slug}.xlsx   — Pre-filled with example data`,
+    `  • Blank_${slug}.xlsx    — Clean template, ready to fill`,
+    `  • Instructions_Guide.pdf — Setup guide`,
+    '',
+    'QUICK START:',
+    '  1. Open .xlsx in Excel or upload to Google Drive > Open with Google Sheets',
+    '  2. Go to "Debt Setup" tab and enter your debts',
+    '  3. See your payoff date on the Dashboard!',
+    '',
+    'This is a DIGITAL download. No physical item will be shipped.',
+  ].join('\n'));
+
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${slug}_Bundle.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
