@@ -297,7 +297,7 @@ export async function renderHtmlToCanvases(html: string): Promise<HTMLCanvasElem
   });
 }
 
-export async function generateResumePDF(data: ResumeData): Promise<void> {
+export async function generateResumePDF(data: ResumeData): Promise<{ blob: Blob, filename: string }> {
   const { jsPDF } = await import('jspdf');
   const html = buildResumeHtml(data);
   const canvases = await renderHtmlToCanvases(html);
@@ -313,5 +313,6 @@ export async function generateResumePDF(data: ResumeData): Promise<void> {
   });
 
   const slug = data.niche.replace(/\s+/g, '-').toLowerCase();
-  doc.save(`${slug}-resume-template.pdf`);
+  const pdfBlob = doc.output('blob');
+  return { blob: pdfBlob, filename: `${slug}-resume-template.pdf` };
 }

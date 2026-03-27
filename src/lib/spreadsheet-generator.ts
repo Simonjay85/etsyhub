@@ -218,7 +218,7 @@ function buildInstructions(XLSX: any) {
 }
 
 /* ─── Main bundle export ─────────────────────────────────────────────────── */
-export async function generateDebtTrackerBundle(productName = 'Debt_Payoff_Tracker'): Promise<void> {
+export async function generateDebtTrackerBundle(productName = 'Debt_Payoff_Tracker'): Promise<{blob: Blob, filename: string}> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const XLSX: any = await import('xlsx');
   const JSZip = (await import('jszip')).default;
@@ -321,18 +321,15 @@ export async function generateDebtTrackerBundle(productName = 'Debt_Payoff_Track
   ].join('\n'));
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${slug}_Bundle.zip`;
-  URL.revokeObjectURL(url);
+  
+  return { blob, filename: `${slug}_Bundle.zip` };
 }
 
 /* ═══════════════════════════════════════════════════════════
    BUDGET TRACKER
    ═══════════════════════════════════════════════════════════ */
 
-export async function generateBudgetTrackerBundle(productName = 'Monthly_Budget_Tracker'): Promise<void> {
+export async function generateBudgetTrackerBundle(productName = 'Monthly_Budget_Tracker'): Promise<{blob: Blob, filename: string}> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const XLSX: any = await import('xlsx');
   const JSZip = (await import('jszip')).default;
@@ -399,17 +396,14 @@ export async function generateBudgetTrackerBundle(productName = 'Monthly_Budget_
   folder.file(`Blank_${slug}.xlsx`, buildWb(false));
   folder.file('README.txt', `Monthly Budget Tracker — 4 tabs: Overview, Categories, Expense Log, Income Log.\nCompatible with Excel and Google Sheets.`);
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `${slug}_Bundle.zip`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  return { blob, filename: `${slug}_Bundle.zip` };
 }
 
 /* ═══════════════════════════════════════════════════════════
    SAVINGS GOAL TRACKER
    ═══════════════════════════════════════════════════════════ */
 
-export async function generateSavingsTrackerBundle(productName = 'Savings_Goal_Tracker'): Promise<void> {
+export async function generateSavingsTrackerBundle(productName = 'Savings_Goal_Tracker'): Promise<{blob: Blob, filename: string}> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const XLSX: any = await import('xlsx');
   const JSZip = (await import('jszip')).default;
@@ -452,17 +446,14 @@ export async function generateSavingsTrackerBundle(productName = 'Savings_Goal_T
   folder.file(`Blank_${slug}.xlsx`, buildWb(false));
   folder.file('README.txt', `Savings Goal Tracker — Goals + Contribution Log tabs.\nCompatible with Excel and Google Sheets.`);
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `${slug}_Bundle.zip`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  return { blob, filename: `${slug}_Bundle.zip` };
 }
 
 /* ═══════════════════════════════════════════════════════════
    INVOICE / FREELANCE TRACKER
    ═══════════════════════════════════════════════════════════ */
 
-export async function generateInvoiceTrackerBundle(productName = 'Invoice_Tracker'): Promise<void> {
+export async function generateInvoiceTrackerBundle(productName = 'Invoice_Tracker'): Promise<{blob: Blob, filename: string}> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const XLSX: any = await import('xlsx');
   const JSZip = (await import('jszip')).default;
@@ -513,9 +504,6 @@ export async function generateInvoiceTrackerBundle(productName = 'Invoice_Tracke
   folder.file(`Blank_${slug}.xlsx`, buildWb(false));
   folder.file('README.txt', `Invoice & Freelance Tracker — Invoices, Clients, Monthly Summary tabs.\nCompatible with Excel and Google Sheets.`);
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `${slug}_Bundle.zip`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  return { blob, filename: `${slug}_Bundle.zip` };
 }
 

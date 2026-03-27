@@ -177,7 +177,7 @@ function getTheme(niche: string): { accent: string; dark: string; rgb: [number, 
   return themes[hash % themes.length];
 }
 
-export async function generateBundle(content: BundleContent): Promise<void> {
+export async function generateBundle(content: BundleContent): Promise<{blob: Blob, filename: string}> {
   const JSZip = (await import('jszip')).default;
   const slug = content.niche.replace(/\s+/g, '_');
 
@@ -215,12 +215,6 @@ export async function generateBundle(content: BundleContent): Promise<void> {
   folder.file('Fonts_Used.txt', fontsText);
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${slug}_Resume_Bundle.zip`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  
+  return { blob, filename: `${slug}_Resume_Bundle.zip` };
 }

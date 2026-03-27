@@ -11,7 +11,7 @@
 
 import type { ImportResult } from './sheet-parser';
 
-const THEMES = [
+export const THEMES = [
   { name: 'Indigo', header: [79, 70, 229], accent: [238, 242, 255], dark: [49, 46, 129] },
   { name: 'Teal', header: [13, 148, 136], accent: [240, 253, 250], dark: [19, 78, 74] },
   { name: 'Rose', header: [225, 29, 72], accent: [255, 241, 242], dark: [136, 19, 55] },
@@ -19,7 +19,11 @@ const THEMES = [
   { name: 'Violet', header: [124, 58, 237], accent: [245, 243, 255], dark: [76, 29, 149] },
 ];
 
-function pickTheme(name: string) {
+function pickTheme(name: string, overrideName?: string) {
+  if (overrideName) {
+    const match = THEMES.find(t => t.name.toLowerCase() === overrideName.toLowerCase());
+    if (match) return match;
+  }
   let hash = 0;
   for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) & 0xffff;
   return THEMES[hash % THEMES.length];
@@ -99,7 +103,7 @@ function buildInstructionsPdf(jsPDF: any, filename: string, sheets: ImportResult
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(200, 210, 255);
-  doc.text(`${sheets.length} sheet${sheets.length > 1 ? 's' : ''} · Styled with ${pickTheme(filename).name} theme`, W / 2, 34, { align: 'center' });
+  doc.text(`${sheets.length} sheet${sheets.length > 1 ? 's' : ''} · Styled with ${theme.name} theme`, W / 2, 34, { align: 'center' });
 
   let y = 54;
 
@@ -157,7 +161,7 @@ function buildInstructionsPdf(jsPDF: any, filename: string, sheets: ImportResult
   return doc.output('arraybuffer');
 }
 
-export async function cloneSpreadsheet(imported: ImportResult, productName?: string): Promise<void> {
+export async function cloneSpreadsheet(imported: ImportResult, productName?: string, themeName?: string): Promise<{ blob: Blob, filename: string }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const XLSX: any = await import('xlsx');
   const JSZip = (await import('jszip')).default;
@@ -165,7 +169,7 @@ export async function cloneSpreadsheet(imported: ImportResult, productName?: str
 
   const name = productName || imported.filename.replace(/\.[^.]+$/, '') || 'Spreadsheet';
   const slug = name.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_');
-  const theme = pickTheme(name);
+  const theme = pickTheme(name, themeName);
 
   // Build SAMPLE workbook (data included)
   const sampleWb = XLSX.utils.book_new();
@@ -209,12 +213,5 @@ export async function cloneSpreadsheet(imported: ImportResult, productName?: str
   ].join('\n'));
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${slug}_Bundle.zip`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  return { blob, filename: `${slug}_Bundle.zip` };
 }
