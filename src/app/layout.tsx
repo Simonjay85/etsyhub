@@ -1,17 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "./components/Sidebar";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Etsy Creator Studio",
@@ -24,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
+    <html lang="en">
+      <body style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}>
         <div className="layout-wrapper">
           <Sidebar />
           <main className="main-content">
