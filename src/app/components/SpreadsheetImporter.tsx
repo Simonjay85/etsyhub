@@ -6,6 +6,7 @@ import {
   CheckCircle2, AlertCircle, Loader2, X, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { parseExcelFile, importGoogleSheet, ImportResult, SheetSummary } from '@/lib/sheet-parser';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   onImportDone: (result: ImportResult) => void;
@@ -13,45 +14,69 @@ interface Props {
 
 function SheetCard({ sheet, expanded, onToggle }: { sheet: SheetSummary; expanded: boolean; onToggle: () => void }) {
   return (
-    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', overflow: 'hidden', marginBottom: '8px' }}>
-      <button onClick={onToggle} style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: 'none', color: 'white', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Table2 size={14} style={{ color: 'var(--accent-1)' }} />
-          <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{sheet.name}</span>
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.06)', padding: '2px 7px', borderRadius: '10px' }}>
+    <div className="border border-white/5 bg-slate-900/50 rounded-xl overflow-hidden mb-2 transition-all hover:border-violet-500/30">
+      <button 
+        onClick={onToggle} 
+        className="w-full bg-transparent hover:bg-white/5 border-none text-white p-3 flex items-center justify-between cursor-pointer transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 rounded-lg bg-violet-500/20 border border-violet-500/30">
+            <Table2 size={16} className="text-violet-400" />
+          </div>
+          <span className="text-sm font-semibold tracking-wide">{sheet.name}</span>
+          <span className="text-[11px] text-slate-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/5 ml-2">
             {sheet.rowCount} rows · {sheet.columnCount} cols
           </span>
         </div>
-        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {expanded ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
       </button>
 
-      {expanded && sheet.headers.length > 0 && (
-        <div style={{ padding: '10px', overflowX: 'auto' }}>
-          {/* Headers */}
-          <div style={{ display: 'flex', gap: '4px', marginBottom: '6px', flexWrap: 'wrap' }}>
-            {sheet.headers.slice(0, 8).map((h, i) => (
-              <span key={i} style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.25)', color: 'var(--accent-1)', fontSize: '0.68rem', padding: '2px 8px', borderRadius: '10px', fontWeight: 600 }}>
-                {h || `Col ${i + 1}`}
-              </span>
-            ))}
-            {sheet.headers.length > 8 && (
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.68rem', padding: '2px 4px' }}>+{sheet.headers.length - 8} more</span>
-            )}
-          </div>
-
-          {/* Sample rows */}
-          {sheet.sampleData.slice(0, 3).map((row, ri) => (
-            <div key={ri} style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
-              {sheet.headers.slice(0, 4).map((_, ci) => (
-                <span key={ci} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', minWidth: '40px', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {row[ci] != null ? String(row[ci]) : '—'}
+      <AnimatePresence>
+        {expanded && sheet.headers.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-3 pb-3 overflow-x-auto custom-scrollbar border-t border-white/5"
+          >
+            {/* Headers */}
+            <div className="flex gap-1.5 mb-2 flex-nowrap mt-3">
+              {sheet.headers.slice(0, 8).map((h, i) => (
+                <span 
+                  key={i} 
+                  className="bg-violet-500/20 border border-violet-500/30 text-violet-300 text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md font-bold whitespace-nowrap"
+                >
+                  {h || `Col ${i + 1}`}
                 </span>
               ))}
-              {sheet.headers.length > 4 && <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>…</span>}
+              {sheet.headers.length > 8 && (
+                <span className="text-slate-500 text-[10px] px-1 py-1 italic">
+                  +{sheet.headers.length - 8} more
+                </span>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+
+            {/* Sample rows */}
+            <div className="space-y-1.5 pl-1">
+              {sheet.sampleData.slice(0, 3).map((row, ri) => (
+                <div key={ri} className="flex gap-1.5">
+                  {sheet.headers.slice(0, 4).map((_, ci) => (
+                    <span 
+                      key={ci} 
+                      className="bg-slate-950/50 border border-white/5 text-slate-400 text-[11px] px-2 py-1 rounded truncate min-w-[60px] max-w-[100px]"
+                    >
+                      {row[ci] != null ? String(row[ci]) : '—'}
+                    </span>
+                  ))}
+                  {sheet.headers.length > 4 && (
+                    <span className="text-slate-500 text-[11px] py-1 px-2">…</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -106,92 +131,156 @@ export default function SpreadsheetImporter({ onImportDone }: Props) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className="flex flex-col gap-5 w-full">
       {/* Tab switcher */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        {([['upload', 'Upload File', <FileSpreadsheet key="f" size={14} />], ['gsheets', 'Google Sheets', <Link2 key="l" size={14} />]] as const).map(([key, label, icon]) => (
-          <button key={key} onClick={() => { setMode(key); setStatus('idle'); setError(''); setResult(null); }} style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${mode === key ? 'var(--accent-1)' : 'var(--glass-border)'}`, background: mode === key ? 'rgba(139,92,246,0.15)' : 'transparent', color: mode === key ? 'var(--accent-1)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontWeight: mode === key ? 600 : 400 }}>
+      <div className="flex gap-2">
+        {([['upload', 'Local File', <FileSpreadsheet key="f" size={16} />], ['gsheets', 'Google Sheets', <Link2 key="l" size={16} />]] as const).map(([key, label, icon]) => (
+          <button 
+            key={key} 
+            onClick={() => { setMode(key); setStatus('idle'); setError(''); setResult(null); }} 
+            className={`flex-1 p-2.5 rounded-xl border flex justify-center items-center gap-2 transition-all duration-200 ${
+              mode === key 
+                ? 'bg-violet-500/15 border-violet-500/40 text-violet-400 font-bold shadow-[0_0_15px_rgba(139,92,246,0.1)]' 
+                : 'bg-transparent border-white/5 text-slate-400 hover:border-white/20 font-medium'
+            }`}
+          >
             {icon}{label}
           </button>
         ))}
       </div>
 
-      {/* Upload area */}
-      {mode === 'upload' && status !== 'done' && (
-        <label
-          onDrop={handleDrop}
-          onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
-          onDragLeave={() => setIsDragOver(false)}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragOver ? 'var(--accent-1)' : 'var(--glass-border)'}`, borderRadius: '12px', padding: '1.75rem 1rem', cursor: 'pointer', background: isDragOver ? 'rgba(139,92,246,0.05)' : 'rgba(255,255,255,0.01)', transition: 'all 0.2s' }}>
-          {status === 'loading'
-            ? <Loader2 size={28} style={{ color: 'var(--accent-1)', animation: 'spin 1s linear infinite' }} />
-            : <UploadCloud size={28} style={{ color: 'var(--accent-1)', marginBottom: '10px' }} />}
-          <span style={{ fontSize: '0.8rem', fontWeight: 500, textAlign: 'center' }}>
-            {status === 'loading' ? 'Reading file…' : <>Drop .xlsx or .csv here<br /><span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>or click to browse</span></>}
-          </span>
-          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleFileChange(e.target.files[0]); }} />
-          <style>{`@keyframes spin{100%{transform:rotate(360deg)}}`}</style>
-        </label>
-      )}
-
-      {/* Google Sheets input */}
-      {mode === 'gsheets' && status !== 'done' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '8px', padding: '8px 10px', lineHeight: 1.6 }}>
-            📋 Sheet must be shared as <strong style={{ color: '#93c5fd' }}>"Anyone with the link can view"</strong><br />
-            <span style={{ fontSize: '0.68rem' }}>File → Share → Change to "Anyone with the link"</span>
-          </div>
-          <input
-            type="url"
-            value={gsUrl}
-            onChange={e => setGsUrl(e.target.value)}
-            placeholder="https://docs.google.com/spreadsheets/d/..."
-            style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white', padding: '9px 12px', borderRadius: '8px', fontSize: '0.78rem', outline: 'none', boxSizing: 'border-box' }}
-          />
-          <button onClick={handleGsImport} disabled={!gsUrl.trim() || status === 'loading'} className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', opacity: !gsUrl.trim() ? 0.5 : 1 }}>
-            {status === 'loading' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Importing…</> : <><Link2 size={15} /> Import Sheet</>}
-          </button>
-        </div>
-      )}
-
-      {/* Error state */}
-      {status === 'error' && (
-        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '10px 12px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-          <AlertCircle size={14} style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <div style={{ fontSize: '0.78rem', color: '#ef4444', fontWeight: 600, marginBottom: '4px' }}>Import failed</div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{error}</div>
-          </div>
-          <button onClick={() => setStatus('idle')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', marginLeft: 'auto', flexShrink: 0 }}><X size={14} /></button>
-        </div>
-      )}
-
-      {/* Results */}
-      {status === 'done' && result && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {/* Summary */}
-          <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '8px', padding: '10px 12px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-            <CheckCircle2 size={14} style={{ color: '#10b981', flexShrink: 0, marginTop: '1px' }} />
-            <div>
-              <div style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 600 }}>{result.filename}</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                {result.sheets.length} sheet{result.sheets.length > 1 ? 's' : ''} detected · {result.sheets.reduce((s, sh) => s + sh.rowCount, 0)} total rows
+      <AnimatePresence mode="popLayout">
+        {/* Upload area */}
+        {mode === 'upload' && status !== 'done' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
+            <label
+              onDrop={handleDrop}
+              onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+              onDragLeave={() => setIsDragOver(false)}
+              className={`flex flex-col items-center justify-center rounded-2xl p-10 cursor-pointer overflow-hidden transition-all duration-300 relative border-2 border-dashed ${
+                isDragOver ? 'bg-violet-500/10 border-violet-500 scale-[1.02]' : 'bg-slate-900/30 border-white/10 hover:border-white/30 hover:bg-white/5'
+              }`}
+            >
+              <div className={`p-4 rounded-full mb-4 transition-all duration-500 ${isDragOver ? 'bg-violet-500/20 rotate-12 scale-110' : 'bg-white/5'}`}>
+                {status === 'loading'
+                  ? <Loader2 size={32} className="text-violet-400 animate-spin" />
+                  : <UploadCloud size={32} className={`${isDragOver ? 'text-violet-400' : 'text-slate-400'}`} />
+                }
               </div>
+              <span className="text-sm font-semibold text-center text-white">
+                {status === 'loading' ? 'Analyzing spreadsheet matrix...' : (
+                  <>
+                    Drop .xlsx or .csv structure here<br />
+                    <span className="text-slate-500 text-xs font-normal mt-1 block">or click to browse local files</span>
+                  </>
+                )}
+              </span>
+              <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => { if (e.target.files?.[0]) handleFileChange(e.target.files[0]); }} />
+            </label>
+          </motion.div>
+        )}
+
+        {/* Google Sheets input */}
+        {mode === 'gsheets' && status !== 'done' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="flex flex-col gap-4 p-4 border border-white/5 bg-slate-900/30 rounded-2xl"
+          >
+            <div className="text-xs text-blue-200/70 bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 leading-relaxed">
+              📋 Sheet must be shared as <strong className="text-blue-400">"Anyone with the link can view"</strong><br />
+              <span className="text-[10px] opacity-70">File → Share → Change to "Anyone with the link"</span>
             </div>
-            <button onClick={() => { setStatus('idle'); setResult(null); }} title="Remove" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', marginLeft: 'auto', flexShrink: 0 }}><X size={14} /></button>
-          </div>
+            
+            <div className="relative">
+              <Link2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="url"
+                value={gsUrl}
+                onChange={e => setGsUrl(e.target.value)}
+                placeholder="https://docs.google.com/spreadsheets/d/..."
+                className="w-full bg-black/40 border border-white/10 text-white py-3 pr-3 pl-10 rounded-xl text-sm focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder-slate-600 shadow-inner"
+              />
+            </div>
+            
+            <button 
+              onClick={handleGsImport} 
+              disabled={!gsUrl.trim() || status === 'loading'} 
+              className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 disabled:opacity-50 text-white rounded-xl py-3 px-4 font-bold flex items-center justify-center gap-2 transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)]"
+            >
+              {status === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Tunneling data...</> : <><Link2 size={16} /> Import Configuration</>}
+            </button>
+          </motion.div>
+        )}
 
-          {/* Sheet cards */}
-          {result.sheets.map(sheet => (
-            <SheetCard key={sheet.name} sheet={sheet} expanded={expandedSheets.has(sheet.name)} onToggle={() => toggleSheet(sheet.name)} />
-          ))}
+        {/* Error state */}
+        {status === 'error' && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-500/10 border border-red-500/30 rounded-xl p-3.5 flex gap-3 items-start relative select-none"
+          >
+            <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+            <div className="pr-6">
+              <div className="text-sm text-red-400 font-bold mb-1">Import Interface Failed</div>
+              <div className="text-xs text-red-200/70 leading-relaxed">{error}</div>
+            </div>
+            <button onClick={() => setStatus('idle')} className="absolute top-3.5 right-3 text-red-400/70 hover:text-red-400 transition-colors">
+              <X size={16} />
+            </button>
+          </motion.div>
+        )}
 
-          {/* Use this template button */}
-          <button onClick={() => onImportDone(result)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '12px' }}>
-            <CheckCircle2 size={16} /> Use This Template
-          </button>
-        </div>
-      )}
+        {/* Results */}
+        {status === 'done' && result && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-3"
+          >
+            {/* Summary */}
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3.5 flex gap-3 items-start relative">
+              <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+              <div className="pr-6">
+                <div className="text-sm text-emerald-400 font-bold mb-0.5">{result.filename}</div>
+                <div className="text-[11px] text-emerald-200/60 font-medium tracking-wide">
+                  {result.sheets.length} valid sheet{result.sheets.length > 1 ? 's' : ''} parsed · {result.sheets.reduce((s, sh) => s + sh.rowCount, 0)} total nodes mapped
+                </div>
+              </div>
+              <button onClick={() => { setStatus('idle'); setResult(null); }} title="Discard" className="absolute top-3.5 right-3 text-emerald-400/50 hover:text-emerald-400 transition-colors bg-black/20 p-1.5 rounded-lg">
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Sheet cards */}
+            <div className="max-h-[250px] overflow-y-auto custom-scrollbar pr-1 -mr-1 space-y-2">
+              {result.sheets.map((sheet, index) => (
+                <motion.div 
+                  key={sheet.name}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <SheetCard sheet={sheet} expanded={expandedSheets.has(sheet.name)} onToggle={() => toggleSheet(sheet.name)} />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Use this template button */}
+            <button 
+              onClick={() => onImportDone(result)} 
+              className="mt-2 w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl p-4 font-bold flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.25)] transition-all active:scale-95 translate-y-0 hover:-translate-y-0.5"
+            >
+              <CheckCircle2 size={18} /> Initialize Clone Architecture
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

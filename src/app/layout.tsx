@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "./components/Sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Etsy Creator Studio",
@@ -13,14 +14,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}>
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased" style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}>
         <div className="layout-wrapper">
           <Sidebar />
           <main className="main-content">
             {children}
           </main>
         </div>
+        <Toaster />
       </body>
     </html>
   );
