@@ -92,6 +92,24 @@ export type EditorState = {
     zoom: number
   }
   
+  // Batch Mockups
+  batchMockups: string[]
+  isBatchGenerating: boolean
+  infographicText: string
+  youWillGetText: string
+  showcaseTitle: string
+  showcaseSubtitle: string
+  fileFormats: string
+  paperSizes: string
+  setBatchMockups: (mockups: string[]) => void
+  setBatchGenerating: (isGenerating: boolean) => void
+  setInfographicText: (text: string) => void
+  setYouWillGetText: (text: string) => void
+  setShowcaseTitle: (text: string) => void
+  setShowcaseSubtitle: (text: string) => void
+  setFileFormats: (text: string) => void
+  setPaperSizes: (text: string) => void
+
   addImages: (newImages: ImageItem[]) => void
   setActiveImage: (id: string, analysis?: ImageAnalysisResult) => void
   removeImage: (id: string) => void
@@ -148,11 +166,28 @@ export const useEditorStore = create<EditorState>((set) => ({
   preview: { status: 'idle', src: null },
   isProcessingAI: false,
   aiImageUrl: null,
+  batchMockups: [],
+  isBatchGenerating: false,
+  infographicText: '🌟 Features:\n- Premium Template\n- Editable in Canva\n- Instant Download',
+  youWillGetText: '🎁 WHAT YOU WILL GET:\n- 1x PDF Planner\n- 500+ Digital Stickers\n- Covers & Widgets',
+  showcaseTitle: 'All-In-One Digital Planner',
+  showcaseSubtitle: '2026 - LANDSCAPE',
+  fileFormats: 'PDF',
+  paperSizes: 'A4 & LETTER',
   ui: {
     activePanel: 'enhancement',
     compareMode: false,
     zoom: 100
   },
+
+  setBatchMockups: (mockups) => set({ batchMockups: mockups }),
+  setBatchGenerating: (isGenerating) => set({ isBatchGenerating: isGenerating }),
+  setInfographicText: (text) => set({ infographicText: text }),
+  setYouWillGetText: (text) => set({ youWillGetText: text }),
+  setShowcaseTitle: (text) => set({ showcaseTitle: text }),
+  setShowcaseSubtitle: (text) => set({ showcaseSubtitle: text }),
+  setFileFormats: (text) => set({ fileFormats: text }),
+  setPaperSizes: (text) => set({ paperSizes: text }),
 
   addImages: (newImages) => set((state) => {
     const combined = [...state.images, ...newImages]
@@ -246,6 +281,14 @@ export const useEditorStore = create<EditorState>((set) => ({
     preview: { status: 'idle', src: null },
     isProcessingAI: false,
     aiImageUrl: null,
+    batchMockups: [],
+    isBatchGenerating: false,
+    infographicText: '🌟 Features:\n- Premium Template\n- Editable in Canva\n- Instant Download',
+    youWillGetText: '🎁 WHAT YOU WILL GET:\n- 1x PDF Planner\n- 500+ Digital Stickers\n- Covers & Widgets',
+    showcaseTitle: 'All-In-One Digital Planner',
+    showcaseSubtitle: '2026 - LANDSCAPE',
+    fileFormats: 'PDF',
+    paperSizes: 'A4 & LETTER',
     ui: { activePanel: 'enhancement', compareMode: false, zoom: 100 }
   })
 }))

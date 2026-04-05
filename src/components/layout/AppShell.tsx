@@ -4,10 +4,12 @@ import { TopBar } from './TopBar'
 import { LeftSidebar } from './LeftSidebar'
 import { RightInspector } from './RightInspector'
 import { PreviewCanvas } from '../canvas/PreviewCanvas'
+import { BatchResultsGrid } from '../canvas/BatchResultsGrid'
 import { useEditorStore } from '@/lib/store/useEditorStore'
 
 export function AppShell() {
   const sourceImage = useEditorStore((state) => state.sourceImage)
+  const batchMockups = useEditorStore((state) => state.batchMockups)
 
   return (
     <div className="flex h-full w-full flex-col bg-background text-foreground overflow-hidden rounded-xl border">
@@ -16,7 +18,9 @@ export function AppShell() {
         <LeftSidebar />
         
         <main className="flex-1 overflow-hidden relative bg-secondary/30">
-          {sourceImage ? (
+          {batchMockups.length > 0 ? (
+            <BatchResultsGrid />
+          ) : sourceImage ? (
             <PreviewCanvas />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-muted-foreground p-8">

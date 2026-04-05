@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutDashboard, Palette, Store, Settings } from 'lucide-react';
+import { LayoutDashboard, Palette, Store, Settings, BarChart2 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
@@ -18,6 +18,10 @@ export default function Sidebar() {
         <Link href="/studio" className={styles.navLink}>
           <Palette size={20} />
           <span>Design Studio</span>
+        </Link>
+        <Link href="/research" className={styles.navLink}>
+          <BarChart2 size={20} />
+          <span>Keyword Research</span>
         </Link>
         <Link href="/listings" className={styles.navLink}>
           <Store size={20} />

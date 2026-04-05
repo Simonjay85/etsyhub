@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
-import ProductGenerator from '../components/ProductGenerator';
+import ListingGenerator from '../components/ListingGenerator';
 import { AppShell } from '@/components/layout/AppShell';
-import { PackageSearch, ImagePlus } from 'lucide-react';
+import { Search, ImagePlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Studio() {
-  const [activeTab, setActiveTab] = useState<'generator' | 'canvas'>('canvas');
+  const [activeTab, setActiveTab] = useState<'thumbnail' | 'listing'>('thumbnail');
 
   return (
     <div className="flex flex-col grow min-h-0 h-full p-4">
@@ -24,27 +24,27 @@ export default function Studio() {
         {/* Segmented Control */}
         <div className="flex items-center bg-slate-900/50 border border-white/5 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
           <button 
-            onClick={() => setActiveTab('canvas')}
+            onClick={() => setActiveTab('thumbnail')}
             className={`relative flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
-              activeTab === 'canvas' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'thumbnail' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            {activeTab === 'canvas' && (
+            {activeTab === 'thumbnail' && (
               <motion.div layoutId="active-tab" className="absolute inset-0 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl shadow-lg border border-white/10" />
             )}
-            <span className="relative z-10 flex items-center gap-2"><ImagePlus size={18} /> Visual Canvas</span>
+            <span className="relative z-10 flex items-center gap-2"><ImagePlus size={18} /> Thumbnail Maker</span>
           </button>
           
           <button 
-            onClick={() => setActiveTab('generator')}
+            onClick={() => setActiveTab('listing')}
             className={`relative flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
-              activeTab === 'generator' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'listing' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            {activeTab === 'generator' && (
-              <motion.div layoutId="active-tab" className="absolute inset-0 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl shadow-lg border border-white/10" />
+            {activeTab === 'listing' && (
+              <motion.div layoutId="active-tab" className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl shadow-lg border border-white/10" />
             )}
-            <span className="relative z-10 flex items-center gap-2"><PackageSearch size={18} /> Product Factory</span>
+            <span className="relative z-10 flex items-center gap-2"><Search size={18} /> Listing SEO Generator</span>
           </button>
         </div>
 
@@ -59,9 +59,9 @@ export default function Studio() {
       {/* Editor Main Area — fills all remaining height */}
       <div className="grow min-h-0 overflow-hidden flex rounded-2xl bg-slate-900/20 backdrop-blur-md border border-white/5 shadow-2xl relative">
         <AnimatePresence mode="wait">
-          {activeTab === 'canvas' ? (
+          {activeTab === 'thumbnail' ? (
             <motion.div 
-              key="canvas"
+              key="thumbnail"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -72,14 +72,14 @@ export default function Studio() {
             </motion.div>
           ) : (
             <motion.div 
-              key="generator"
+              key="listing"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-0"
+              className="absolute inset-0 flex flex-col"
             >
-              <ProductGenerator />
+              <ListingGenerator />
             </motion.div>
           )}
         </AnimatePresence>
