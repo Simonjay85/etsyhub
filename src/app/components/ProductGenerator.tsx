@@ -217,7 +217,7 @@ export default function ProductGenerator() {
       </div>
 
       {/* Right Column - Product Preview / Mockup Area */}
-      <div className="flex-1 relative overflow-hidden rounded-2xl border border-white/5 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800/80 to-slate-950/80 flex flex-col items-center justify-center shadow-2xl">
+      <div className="flex-1 relative overflow-hidden rounded-2xl border border-white/5 bg-slate-900 flex flex-col items-center justify-center shadow-2xl">
         
         {/* Abstract Background Elements */}
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-violet-500/10 blur-[120px] rounded-full pointer-events-none" />
