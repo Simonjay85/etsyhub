@@ -623,6 +623,285 @@ async function renderStandardMockup(
 }
 
 // ============================================================
+// COLLECTION MOCKUP RENDERERS (Multi-page fan/grid layouts)
+// ============================================================
+
+/**
+ * COLLECTION FAN — Light background, 3 iPad frames fanned/overlapping (center top)
+ * + product title (large script) + subtitle badges
+ * Mirrors the "SPRING CLEANING LIST" 3-card fan preview style
+ */
+async function renderCollectionFan(
+  imageSrcs: string[],
+  title: string,
+  subtitle: string
+): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+
+  // Light airy background
+  const bg = ctx.createLinearGradient(0, 0, 2000, 2000);
+  bg.addColorStop(0, '#f5f7fa');
+  bg.addColorStop(1, '#e8ecf0');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 2000, 2000);
+
+  // Title
+  ctx.fillStyle = '#c0392b';
+  ctx.font = '900 120px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(title.toUpperCase(), 1000, 140);
+
+  // Subtitle badges (EASY SETUP | BEGINNER FRIENDLY | FULLHOUSE LIST)
+  const parts = subtitle ? subtitle.split('|') : ['EASY SETUP', 'BEGINNER FRIENDLY', 'FULLHOUSE LIST'];
+  ctx.font = '700 36px system-ui, sans-serif';
+  ctx.fillStyle = '#555';
+  let badgeX = 1000 - (parts.length - 1) * 220 / 2;
+  parts.forEach((part, i) => {
+    const label = part.trim();
+    const first = label.split(' ')[0];
+    const rest = label.slice(first.length);
+    ctx.fillStyle = '#c0392b';
+    ctx.font = 'bold 36px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(first, badgeX + i * 360, 240);
+    ctx.fillStyle = '#555';
+    ctx.fillText(rest, badgeX + i * 360 + ctx.measureText(first).width / 2 + 10, 240);
+    if (i < parts.length - 1) {
+      ctx.fillStyle = '#aaa';
+      ctx.fillText('|', badgeX + i * 360 + 200, 240);
+    }
+  });
+
+  const srcs = imageSrcs.slice(0, 3);
+  const imgs: HTMLImageElement[] = [];
+  for (const src of srcs) {
+    try { imgs.push(await loadImage(src)); } catch { /* skip */ }
+  }
+
+  if (imgs.length > 0) {
+    const cardW = 800, cardH = 1000, fr = 40, border = 24;
+    // Layout: left (back), center (front), right (back)
+    const positions = [
+      { cx: 800, cy: 1150, rot: -8, scale: 0.82 },
+      { cx: 1020, cy: 1100, rot: 0, scale: 1.0 },
+      { cx: 1240, cy: 1150, rot: 8, scale: 0.82 },
+    ];
+    // Draw back cards first (z-order)
+    const zOrder = [0, 2, 1];
+    for (const zi of zOrder) {
+      if (zi >= imgs.length) continue;
+      const pos = positions[zi];
+      const img = imgs[zi % imgs.length];
+      const w = cardW * pos.scale, h = cardH * pos.scale;
+      ctx.save();
+      ctx.translate(pos.cx, pos.cy);
+      ctx.rotate((pos.rot * Math.PI) / 180);
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowBlur = 50;
+      ctx.shadowOffsetY = 20;
+      ctx.fillStyle = '#1c1c1e';
+      drawRoundedRect(ctx, -w / 2 - border, -h / 2 - border, w + border * 2, h + border * 2, fr);
+      ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.fillStyle = '#fff';
+      drawRoundedRect(ctx, -w / 2 - 3, -h / 2 - 3, w + 6, h + 6, fr - 6);
+      ctx.fill();
+      ctx.save();
+      drawRoundedRect(ctx, -w / 2, -h / 2, w, h, fr - 10);
+      ctx.clip();
+      const is = Math.max(w / img.width, h / img.height);
+      ctx.drawImage(img, -img.width * is / 2, -img.height * is / 2, img.width * is, img.height * is);
+      ctx.restore();
+      ctx.restore();
+    }
+  }
+
+  // Bottom brand text
+  ctx.fillStyle = '#555';
+  ctx.font = '700 36px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('DAISYFLOWDIGITAL / HTTPS://DAISYFLOWDIGITAL.ETSY.COM', 1000, 1900);
+
+  applyGlobalWatermark(ctx);
+  return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+/**
+ * COLLECTION GRID — Left column 3 cards, right side large title + bullet points
+ * Mirrors the "SPRING CLEANING LIST" grid layout reference image
+ */
+async function renderCollectionGrid(
+  imageSrcs: string[],
+  title: string,
+  subtitle: string
+): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+
+  // White/near-white background  
+  ctx.fillStyle = '#f9fafb';
+  ctx.fillRect(0, 0, 2000, 2000);
+
+  const srcs = imageSrcs.slice(0, 5);
+  const imgs: HTMLImageElement[] = [];
+  for (const src of srcs) {
+    try { imgs.push(await loadImage(src)); } catch { /* skip */ }
+  }
+
+  // Left column: staggered cards at angles like the reference
+  if (imgs.length > 0) {
+    const cardW = 620, cardH = 800, fr = 36, border = 20;
+    const leftPositions = [
+      { cx: 480, cy: 420, rot: -5 },
+      { cx: 460, cy: 1050, rot: -3 },
+      { cx: 490, cy: 1650, rot: -6 },
+    ];
+
+    for (let i = 0; i < Math.min(3, imgs.length); i++) {
+      const pos = leftPositions[i];
+      const img = imgs[i];
+      const w = cardW, h = cardH;
+      ctx.save();
+      ctx.translate(pos.cx, pos.cy);
+      ctx.rotate((pos.rot * Math.PI) / 180);
+      ctx.shadowColor = 'rgba(0,0,0,0.18)';
+      ctx.shadowBlur = 45;
+      ctx.shadowOffsetY = 15;
+      ctx.fillStyle = '#1c1c1e';
+      drawRoundedRect(ctx, -w / 2 - border, -h / 2 - border, w + border * 2, h + border * 2, fr);
+      ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.fillStyle = '#fff';
+      drawRoundedRect(ctx, -w / 2 - 3, -h / 2 - 3, w + 6, h + 6, fr - 6);
+      ctx.fill();
+      ctx.save();
+      drawRoundedRect(ctx, -w / 2, -h / 2, w, h, fr - 10);
+      ctx.clip();
+      const is = Math.max(w / img.width, h / img.height);
+      ctx.drawImage(img, -img.width * is / 2, -img.height * is / 2, img.width * is, img.height * is);
+      ctx.restore();
+      ctx.restore();
+    }
+  }
+
+  // Right side — Large title
+  const rx = 1200;
+  ctx.fillStyle = '#c0392b';
+  ctx.font = '900 160px Georgia, serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  const titleWords = title.toUpperCase().split(' ');
+  let ty = 300;
+  titleWords.forEach(word => {
+    ctx.fillText(word, rx, ty);
+    ty += 170;
+  });
+
+  // Bullet points (from subtitle or defaults)
+  const bullets = subtitle ? subtitle.split('|') : ['EASY SETUP', 'BEGINNER FRIENDLY', 'FULLHOUSE LIST'];
+  ctx.fillStyle = '#333';
+  ctx.font = '700 52px system-ui, sans-serif';
+  ctx.textBaseline = 'middle';
+  bullets.forEach((b, i) => {
+    const by = 1050 + i * 120;
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.arc(rx + 18, by, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText(b.trim(), rx + 50, by);
+  });
+
+  applyGlobalWatermark(ctx);
+  return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+/**
+ * COLLECTION DIAGONAL — Cards arranged diagonally from bottom-left to top-right
+ * with text on the left side
+ */
+async function renderCollectionDiagonal(
+  imageSrcs: string[],
+  title: string,
+  subtitle: string
+): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+
+  ctx.fillStyle = '#f8f9fb';
+  ctx.fillRect(0, 0, 2000, 2000);
+
+  const srcs = imageSrcs.slice(0, 3);
+  const imgs: HTMLImageElement[] = [];
+  for (const src of srcs) {
+    try { imgs.push(await loadImage(src)); } catch { /* skip */ }
+  }
+
+  // Diagonal cards on the right with tilted angles — bottom-left to top-right
+  if (imgs.length > 0) {
+    const cardW = 720, cardH = 920, fr = 36, border = 20;
+    const diagPos = [
+      { cx: 1520, cy: 500, rot: -15 },
+      { cx: 1380, cy: 1050, rot: -10 },
+      { cx: 1200, cy: 1600, rot: -5 },
+    ];
+
+    for (let i = 0; i < Math.min(3, imgs.length); i++) {
+      const pos = diagPos[i];
+      const img = imgs[i];
+      ctx.save();
+      ctx.translate(pos.cx, pos.cy);
+      ctx.rotate((pos.rot * Math.PI) / 180);
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetY = 15;
+      ctx.fillStyle = '#1c1c1e';
+      drawRoundedRect(ctx, -cardW / 2 - border, -cardH / 2 - border, cardW + border * 2, cardH + border * 2, fr);
+      ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.fillStyle = '#fff';
+      drawRoundedRect(ctx, -cardW / 2 - 3, -cardH / 2 - 3, cardW + 6, cardH + 6, fr - 6);
+      ctx.fill();
+      ctx.save();
+      drawRoundedRect(ctx, -cardW / 2, -cardH / 2, cardW, cardH, fr - 10);
+      ctx.clip();
+      const is = Math.max(cardW / img.width, cardH / img.height);
+      ctx.drawImage(img, -img.width * is / 2, -img.height * is / 2, img.width * is, img.height * is);
+      ctx.restore();
+      ctx.restore();
+    }
+  }
+
+  // Text left side
+  const lx = 180;
+  ctx.fillStyle = '#c0392b';
+  ctx.font = '900 180px Georgia, serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  const words = title.toUpperCase().split(' ');
+  let ty = 200;
+  words.forEach(word => {
+    ctx.fillText(word, lx, ty);
+    ty += 200;
+  });
+
+  const bullets = subtitle ? subtitle.split('|') : ['EASY SETUP', 'BEGINNER FRIENDLY', 'FULLHOUSE LIST'];
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 52px system-ui';
+  ctx.textBaseline = 'middle';
+  bullets.forEach((b, i) => {
+    const by = 1100 + i * 120;
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.arc(lx + 18, by, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText(b.trim(), lx + 50, by);
+  });
+
+  applyGlobalWatermark(ctx);
+  return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+// ============================================================
 // BATCH GENERATOR
 // ============================================================
 
@@ -639,8 +918,9 @@ export async function generateBatchMockups(
 ): Promise<string[]> {
   const generated: string[] = [];
   const productImg = await loadImage(productImageSrc);
+  const hasCollection = (allImageSrcs && allImageSrcs.length >= 2);
   const hasShowcase = (allImageSrcs && allImageSrcs.length >= 3);
-  const totalSteps = MOCKUP_TEMPLATES.length + 2 + (hasShowcase ? 1 : 0);
+  const totalSteps = MOCKUP_TEMPLATES.length + 2 + (hasShowcase ? 1 : 0) + (hasCollection ? 3 : 0);
 
   // 1. Generate all 10 mockups
   for (let i = 0; i < MOCKUP_TEMPLATES.length; i++) {
@@ -767,6 +1047,36 @@ export async function generateBatchMockups(
       generated.push(dataUrl);
     } catch (e) {
       console.error('Failed to generate showcase mockup', e);
+    }
+  }
+
+  // 6. Collection Fan (multi-page fanned preview) — requires 2+ uploaded images
+  if (hasCollection && allImageSrcs) {
+    try {
+      const fanUrl = await renderCollectionFan(allImageSrcs, showcaseTitle || 'Collection', showcaseSubtitle || 'EASY SETUP | BEGINNER FRIENDLY | FULLHOUSE LIST');
+      generated.push(fanUrl);
+    } catch (e) {
+      console.error('Failed to generate collection fan mockup', e);
+    }
+  }
+
+  // 7. Collection Grid (grid layout with text) — requires 2+ uploaded images
+  if (hasCollection && allImageSrcs) {
+    try {
+      const gridUrl = await renderCollectionGrid(allImageSrcs, showcaseTitle || 'Collection', showcaseSubtitle || 'EASY SETUP | BEGINNER FRIENDLY | FULLHOUSE LIST');
+      generated.push(gridUrl);
+    } catch (e) {
+      console.error('Failed to generate collection grid mockup', e);
+    }
+  }
+
+  // 8. Collection Diagonal — requires 2+ uploaded images
+  if (hasCollection && allImageSrcs) {
+    try {
+      const diagUrl = await renderCollectionDiagonal(allImageSrcs, showcaseTitle || 'Collection', showcaseSubtitle || 'EASY SETUP | BEGINNER FRIENDLY | FULLHOUSE LIST');
+      generated.push(diagUrl);
+    } catch (e) {
+      console.error('Failed to generate collection diagonal mockup', e);
     }
   }
 
