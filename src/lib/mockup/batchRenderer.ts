@@ -914,12 +914,41 @@ export async function generateBatchMockups(
   showcaseSubtitle?: string,
   fileFormats?: string,
   paperSizes?: string,
-  onProgress?: (index: number, total: number) => void
+  onProgress?: (index: number, total: number) => void,
+  productStyle: 'digital-planner' | 'planner-utility' = 'digital-planner'
 ): Promise<string[]> {
   const generated: string[] = [];
-  const productImg = await loadImage(productImageSrc);
   const hasCollection = (allImageSrcs && allImageSrcs.length >= 2);
   const hasShowcase = (allImageSrcs && allImageSrcs.length >= 3);
+
+  // === PLANNER UTILITY: only runs Collection-style mockups ===
+  if (productStyle === 'planner-utility') {
+    if (!hasCollection || !allImageSrcs) {
+      throw new Error('Planner Utility requires at least 2 uploaded images.');
+    }
+    const title = showcaseTitle || 'Planner Collection';
+    const subtitle = showcaseSubtitle || 'EASY SETUP | BEGINNER FRIENDLY | FULLHOUSE LIST';
+    const totalSteps = 3;
+    try {
+      const fanUrl = await renderCollectionFan(allImageSrcs, title, subtitle);
+      generated.push(fanUrl);
+      if (onProgress) onProgress(1, totalSteps);
+    } catch (e) { console.error('Collection Fan failed', e); }
+    try {
+      const gridUrl = await renderCollectionGrid(allImageSrcs, title, subtitle);
+      generated.push(gridUrl);
+      if (onProgress) onProgress(2, totalSteps);
+    } catch (e) { console.error('Collection Grid failed', e); }
+    try {
+      const diagUrl = await renderCollectionDiagonal(allImageSrcs, title, subtitle);
+      generated.push(diagUrl);
+      if (onProgress) onProgress(3, totalSteps);
+    } catch (e) { console.error('Collection Diagonal failed', e); }
+    return generated;
+  }
+
+  // === DIGITAL PLANNER: original full-batch pipeline ===
+  const productImg = await loadImage(productImageSrc);
   const totalSteps = MOCKUP_TEMPLATES.length + 2 + (hasShowcase ? 1 : 0) + (hasCollection ? 3 : 0);
 
   // 1. Generate all 10 mockups
