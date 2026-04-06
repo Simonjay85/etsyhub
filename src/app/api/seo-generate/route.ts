@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       '\nReturn ONLY a valid JSON object with exact structure:\n' +
       '{\n' +
       '  "title": "' + titleRules + '",\n' +
-      '  "description": "Expert Etsy copywriter for feminine digital productivity products. Write a complete listing description (800+ words) for the North American market. Tone: feminine, soft premium, helpful. Structure: 1) Opening paragraph 2) WHAT YOU\'LL RECEIVE 3) FEATURES 4) WHY YOU\'LL LOVE IT 5) PERFECT FOR 6) IMPORTANT DETAILS 7) HOW IT WORKS 8) PLEASE NOTE 9) Closing line. Rules: SEO-friendly, skimmable, buyer-confident, explicitly state digital-only policy and no-refund policy. Every bullet must start with a relevant emoji.",\n' +
+      '  "description": "Expert Etsy copywriter for feminine digital products. Write a VERY LONG, EXHAUSTIVE listing description (1500+ words). Tone: feminine, soft premium, deeply helpful. Structure: 1) Hook & Opening paragraph 2) WHAT YOU\'LL RECEIVE (detailed breakdown) 3) DEEP DIVE FEATURES (bullet point every single small detail) 4) WHY YOU\'LL LOVE IT (emotional benefits) 5) PERFECT FOR (target audience scenarios) 6) HOW IT WORKS (step-by-step guide) 7) COMPATIBILITY 8) FAQ (make up 3 common questions) 9) IMPORTANT DETAILS 10) PLEASE NOTE 11) Closing line. Rules: SEO-friendly, highly skimmable but very lengthy, buyer-confident, explicitly state digital-only policy and no-refund. Every bullet MUST start with a relevant emoji. Expand heavily on every section.",\n' +
       '  "hashtags": "Exactly 13 highly relevant Etsy tags separated by commas. Each tag must be 20 characters or less."\n' +
       '}\n' +
       'Do not include any other text, markdown blocks, or explanations.';
@@ -137,8 +137,7 @@ function mockFallback(keyword: string) {
   // Title Case keyword — avoids the all-caps Etsy error
   const kwTitle = kw.replace(/\b\w/g, (c) => c.toUpperCase());
 
-  const titleParts = [
-    kwTitle,
+  const fallbackPhrases = [
     'Editable Canva Template',
     'Instant Digital Download',
     'Aesthetic Minimalist Design',
@@ -147,7 +146,16 @@ function mockFallback(keyword: string) {
     'Self Care Planner',
     'Productivity Tool',
     'Goodnotes iPad',
+    'Notability Compatible',
+    'Goal Setting Guide',
+    'Undated Organizer',
+    'Daily Weekly Monthly',
+    'Print at Home',
+    'Bonus Stickers Included'
   ];
+  // Shuffle phrases to get a unique title each run even without OpenAI
+  const shuffled = fallbackPhrases.sort(() => 0.5 - Math.random());
+  const titleParts = [kwTitle, ...shuffled];
   let title = '';
   for (const part of titleParts) {
     const next = title ? title + ' | ' + part : '\u2728 ' + part;
@@ -173,13 +181,36 @@ function mockFallback(keyword: string) {
     '\ud83d\udcc4 Bonus: 50+ Coordinating Digital Stickers\n' +
     '\ud83d\udcc4 Lifetime Access & Free Updates\n\n' +
     '\u2501'.repeat(30) + '\n\n' +
-    '\u2728 FEATURES YOU\'LL LOVE:\n\n' +
-    '\ud83c\udfa8 Fully customizable in Canva (Free version works!)\n' +
-    '\ud83d\udcc0 Clean, modern, minimalist aesthetic\n' +
-    '\ud83c\udf08 Soft pastel color palette\n' +
-    '\ud83d\udcf1 Compatible with Goodnotes, Notability, and more\n' +
-    '\ud83d\udcbb Works on iPad, tablet, laptop, and desktop\n' +
-    '\ud83d\udcd7 Print-ready — use digitally OR print at home\n\n' +
+    '\u2728 DEEP DIVE FEATURES:\n\n' +
+    '\ud83c\udfa8 Fully customizable in Canva (Free version works perfectly!)\n' +
+    '\ud83d\udcc0 Clean, modern, minimalist aesthetic designed for focus\n' +
+    '\ud83c\udf08 Thoughtfully curated soft pastel color palette\n' +
+    '\ud83d\udcf1 Hyperlinked navigation for seamless digital use\n' +
+    '\ud83d\udcbb Works beautifully on iPad, tablet, laptop, and desktop\n' +
+    '\ud83d\udcd7 Print-ready — use digitally OR print easily at home\n' +
+    '\ud83c\udfaf Habit trackers, financial logs, and wellness check-ins included\n\n' +
+    '\u2501'.repeat(30) + '\n\n' +
+    '\ud83d\udcbb COMPATIBILITY & APPS:\n\n' +
+    '\u2714\ufe0f GoodNotes 5 & 6 (Highly Recommended!)\n' +
+    '\u2714\ufe0f Notability\n' +
+    '\u2714\ufe0f Xodo & Noteshelf\n' +
+    '\u2714\ufe0f Canva Web & App\n' +
+    '\u2714\ufe0f Adobe Acrobat for basic PDF viewing\n\n' +
+    '\u2501'.repeat(30) + '\n\n' +
+    '\ud83d\udca1 FREQUENTLY ASKED QUESTIONS:\n\n' +
+    'Q: How do I access my files?\n' +
+    'A: After purchase, Etsy will immediately send you an email with a download link. You can also access them in your Etsy account under "Purchases and Reviews".\n\n' +
+    'Q: Do I need a paid Canva Pro account?\n' +
+    'A: Not at all! This template is 100% compatible with the FREE version of Canva. No pro elements are used.\n\n' +
+    'Q: Can I change the colors, fonts, and text?\n' +
+    'A: Yes! Absolutely every single element is fully customizable to match your unique brand or personal style.\n\n' +
+    '\u2501'.repeat(30) + '\n\n' +
+    '\ud83d\udef8 HOW IT WORKS:\n\n' +
+    '1. Add to cart and complete checkout.\n' +
+    '2. You will receive an instant download link from Etsy.\n' +
+    '3. Download the PDF instructions.\n' +
+    '4. Click the link inside the PDF to access your files or template.\n' +
+    '5. Import to your favorite app or start customizing immediately!\n\n' +
     '\u2501'.repeat(30) + '\n\n' +
     '\u26a0\ufe0f PLEASE NOTE:\n\n' +
     '\ud83d\udeab This is a DIGITAL PRODUCT — no physical item will be shipped\n' +
