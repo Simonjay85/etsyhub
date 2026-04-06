@@ -99,6 +99,52 @@ const UTILITY_PRESETS = [
   },
 ];
 
+// ============================================================
+// COMPOSITE IMAGE PRESETS
+// ============================================================
+const COMPOSITE_PRESETS = [
+  {
+    id: 'product-bundle',
+    label: '📦 Product Bundle',
+    showcaseTitle: 'Digital Bundle',
+    showcaseSubtitle: 'DIGITAL COLLECTION · INSTANT DOWNLOAD',
+    fileFormats: 'PDF',
+    paperSizes: 'A4',
+    infographic: '',
+    youWillGet: '',
+  },
+  {
+    id: 'before-after',
+    label: '✨ Before & After',
+    showcaseTitle: 'Before & After',
+    showcaseSubtitle: 'TRANSFORMATION · RESULTS · AMAZING',
+    fileFormats: 'PNG',
+    paperSizes: 'A4',
+    infographic: '',
+    youWillGet: '',
+  },
+  {
+    id: 'color-variants',
+    label: '🎨 Color Variants',
+    showcaseTitle: 'Color Collection',
+    showcaseSubtitle: '6 BEAUTIFUL COLORS · PICK YOUR FAVORITE',
+    fileFormats: 'PDF & PNG',
+    paperSizes: 'A4',
+    infographic: '',
+    youWillGet: '',
+  },
+  {
+    id: 'collection-showcase',
+    label: '🖼️ Showcase',
+    showcaseTitle: 'Full Collection',
+    showcaseSubtitle: 'COMPLETE BUNDLE · ALL INCLUDED · BEST VALUE',
+    fileFormats: 'PDF',
+    paperSizes: 'A4 & LETTER',
+    infographic: '',
+    youWillGet: '',
+  },
+];
+
 export function LeftSidebar() {
   const { 
     sourceImage, images, analysis, setAnalysis, 
@@ -112,7 +158,7 @@ export function LeftSidebar() {
     productStyle, setProductStyle
   } = useEditorStore()
 
-  const activePresets = productStyle === 'digital-planner' ? PLANNER_PRESETS : UTILITY_PRESETS;
+  const activePresets = productStyle === 'digital-planner' ? PLANNER_PRESETS : productStyle === 'planner-utility' ? UTILITY_PRESETS : COMPOSITE_PRESETS;
 
   const applyPreset = (presetId: string) => {
     const preset = activePresets.find(p => p.id === presetId);
@@ -127,11 +173,6 @@ export function LeftSidebar() {
   };
 
   const handleBatchGenerate = async () => {
-    if (!sourceImage && productStyle === 'digital-planner') return;
-    if (productStyle === 'planner-utility' && images.length < 2) {
-      toast.error('Planner Utility requires at least 2 uploaded images!');
-      return;
-    }
     setBatchGenerating(true);
     try {
       const allSrcs = images.map(img => img.src);
@@ -203,6 +244,16 @@ export function LeftSidebar() {
             >
               🗂️ Planner Utility
             </button>
+            <button
+              onClick={() => setProductStyle('composite')}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                productStyle === 'composite'
+                  ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/30'
+                  : 'text-muted-foreground hover:text-white hover:bg-white/5'
+              }`}
+            >
+              🎨 Composite
+            </button>
           </div>
         </div>
 
@@ -210,6 +261,11 @@ export function LeftSidebar() {
         {productStyle === 'planner-utility' && (
           <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs text-orange-300">
             📌 Upload <strong>2+ pages</strong> of your product. System will generate Fan, Grid & Diagonal collection mockups.
+          </div>
+        )}
+        {productStyle === 'composite' && (
+          <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20 text-xs text-pink-300">
+            🎨 Upload <strong>2–6 images</strong> of your product. System will generate 6 composite layout mockups (Mosaic, Polaroid, Split, Strip, Hero, Diagonal).
           </div>
         )}
 
@@ -220,18 +276,21 @@ export function LeftSidebar() {
         
         <ImageGallery />
 
-        {(sourceImage || (productStyle === 'planner-utility' && images.length > 0)) && (
+        {(sourceImage || ((productStyle === 'planner-utility' || productStyle === 'composite') && images.length > 0)) && (
           <div className="space-y-4">
             {/* ─── PRESETS ─── */}
             <div className={`p-3 rounded-xl border ${
               productStyle === 'digital-planner'
                 ? 'bg-gradient-to-br from-emerald-600/10 to-teal-600/10 border-emerald-500/20'
-                : 'bg-gradient-to-br from-orange-600/10 to-amber-600/10 border-orange-500/20'
+                : productStyle === 'planner-utility'
+                ? 'bg-gradient-to-br from-orange-600/10 to-amber-600/10 border-orange-500/20'
+                : 'bg-gradient-to-br from-pink-600/10 to-rose-600/10 border-pink-500/20'
+
             }`}>
               <h2 className={`text-xs font-semibold mb-2 uppercase tracking-wider ${
-                productStyle === 'digital-planner' ? 'text-emerald-400' : 'text-orange-400'
+                productStyle === 'digital-planner' ? 'text-emerald-400' : productStyle === 'planner-utility' ? 'text-orange-400' : 'text-pink-400'
               }`}>
-                {productStyle === 'digital-planner' ? 'Planner Type' : 'Utility Type'}
+                {productStyle === 'digital-planner' ? 'Planner Type' : productStyle === 'planner-utility' ? 'Utility Type' : 'Composite Preset'}
               </h2>
               <div className="grid grid-cols-2 gap-1.5">
                 {activePresets.map(preset => (
@@ -241,7 +300,9 @@ export function LeftSidebar() {
                     className={`text-xs px-2 py-2 rounded-lg bg-black/20 border border-white/5 text-left transition-all text-muted-foreground truncate ${
                       productStyle === 'digital-planner'
                         ? 'hover:bg-emerald-600/30 hover:border-emerald-500/30 hover:text-white'
-                        : 'hover:bg-orange-600/30 hover:border-orange-500/30 hover:text-white'
+                        : productStyle === 'planner-utility'
+                        ? 'hover:bg-orange-600/30 hover:border-orange-500/30 hover:text-white'
+                        : 'hover:bg-pink-600/30 hover:border-pink-500/30 hover:text-white'
                     }`}
                   >
                     {preset.label}
@@ -255,7 +316,9 @@ export function LeftSidebar() {
               <h2 className="text-sm font-semibold mb-1 text-violet-400">Etsy Batch Generator</h2>
               <p className="text-xs text-muted-foreground mb-3">
                 {images.length} image{images.length !== 1 ? 's' : ''} · 
-                {productStyle === 'planner-utility' 
+                {productStyle === 'composite'
+                  ? (images.length >= 2 ? ' Composite ✓' : ' Need 2+ images')
+                  : productStyle === 'planner-utility' 
                   ? (images.length >= 2 ? ' Collection ✓' : ' Need 2+ images')
                   : (images.length >= 3 ? ' Showcase ✓' : ' Need 3+ for Showcase')}
               </p>
@@ -351,7 +414,7 @@ export function LeftSidebar() {
                 {isBatchGenerating ? (
                   <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> Generating...</>
                 ) : (
-                  <>✨ Generate {productStyle === 'planner-utility' ? 'Collection Mockups' : 'All Mockups'}</>
+                  <>✨ Generate {productStyle === 'planner-utility' ? 'Collection Mockups' : productStyle === 'composite' ? 'Composite Mockups' : 'All Mockups'}</>
                 )}
               </button>
             </div>

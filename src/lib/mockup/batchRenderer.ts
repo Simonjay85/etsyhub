@@ -902,6 +902,227 @@ async function renderCollectionDiagonal(
 }
 
 // ============================================================
+// COMPOSITE IMAGE RENDERERS (Multi-image collage layouts)
+// ============================================================
+
+async function renderCompositeMosaic(imageSrcs: string[], title: string, subtitle: string): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+  const bg = ctx.createLinearGradient(0, 0, 2000, 2000);
+  bg.addColorStop(0, '#1a0533'); bg.addColorStop(0.5, '#2d1b69'); bg.addColorStop(1, '#11006b');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, 2000, 2000);
+  ctx.globalAlpha = 0.03;
+  for (let i = 0; i < 4000; i++) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.random() * 2000, Math.random() * 2000, 1, 1); }
+  ctx.globalAlpha = 1;
+  const imgs: HTMLImageElement[] = [];
+  for (const src of imageSrcs.slice(0, 4)) { try { imgs.push(await loadImage(src)); } catch { /* skip */ } }
+  if (imgs.length > 0) {
+    const gap = 24, pad = 80, cellW = (2000 - pad * 2 - gap) / 2, cellH = (2000 - pad * 2 - gap - 220) / 2, startY = 220;
+    const positions = [{ col: 0, row: 0 }, { col: 1, row: 0 }, { col: 0, row: 1 }, { col: 1, row: 1 }];
+    for (let i = 0; i < Math.min(4, imgs.length); i++) {
+      const { col, row } = positions[i];
+      const x = pad + col * (cellW + gap), y = startY + row * (cellH + gap), img = imgs[i % imgs.length];
+      ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 15;
+      ctx.fillStyle = '#fff'; drawRoundedRect(ctx, x - 6, y - 6, cellW + 12, cellH + 12, 24); ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.save(); drawRoundedRect(ctx, x, y, cellW, cellH, 20); ctx.clip();
+      const s = Math.max(cellW / img.width, cellH / img.height);
+      ctx.drawImage(img, x + cellW / 2 - img.width * s / 2, y + cellH / 2 - img.height * s / 2, img.width * s, img.height * s);
+      ctx.restore();
+    }
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.font = '900 90px Georgia, serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(title.toUpperCase(), 1000, 100);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '600 38px system-ui, sans-serif';
+  ctx.fillText(subtitle || 'DIGITAL DOWNLOAD COLLECTION', 1000, 175);
+  applyGlobalWatermark(ctx); return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+async function renderCompositePolaroid(imageSrcs: string[], title: string, subtitle: string): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+  const bg = ctx.createLinearGradient(0, 0, 2000, 2000);
+  bg.addColorStop(0, '#fdf6e3'); bg.addColorStop(1, '#f5e6c8');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, 2000, 2000);
+  ctx.globalAlpha = 0.04;
+  for (let i = 0; i < 3000; i++) { ctx.fillStyle = '#8b7355'; ctx.fillRect(Math.random() * 2000, Math.random() * 2000, 2, 2); }
+  ctx.globalAlpha = 1;
+  const imgs: HTMLImageElement[] = [];
+  for (const src of imageSrcs.slice(0, 4)) { try { imgs.push(await loadImage(src)); } catch { /* skip */ } }
+  if (imgs.length > 0) {
+    const polaroidW = 640, photoH = 580, bottomPad = 120, polaroidH = photoH + bottomPad;
+    const rotations = [-12, 6, -4, 10];
+    const positions = [{ cx: 550, cy: 950 }, { cx: 1100, cy: 820 }, { cx: 850, cy: 1200 }, { cx: 1400, cy: 1100 }];
+    for (const zi of [3, 0, 2, 1]) {
+      if (zi >= imgs.length) continue;
+      const img = imgs[zi], pos = positions[zi % positions.length], rot = rotations[zi % rotations.length];
+      ctx.save(); ctx.translate(pos.cx, pos.cy); ctx.rotate((rot * Math.PI) / 180);
+      ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 50; ctx.shadowOffsetX = 8; ctx.shadowOffsetY = 15;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(-polaroidW / 2, -polaroidH / 2, polaroidW, polaroidH);
+      ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+      ctx.save(); ctx.beginPath();
+      ctx.rect(-polaroidW / 2 + 20, -polaroidH / 2 + 20, polaroidW - 40, photoH - 20); ctx.clip();
+      const s = Math.max((polaroidW - 40) / img.width, (photoH - 20) / img.height);
+      ctx.drawImage(img, -polaroidW / 2 + 20 + (polaroidW - 40) / 2 - img.width * s / 2, -polaroidH / 2 + 20 + (photoH - 20) / 2 - img.height * s / 2, img.width * s, img.height * s);
+      ctx.restore(); ctx.restore();
+    }
+  }
+  ctx.fillStyle = '#3d2b1f'; ctx.font = 'italic 900 110px Georgia, serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(title, 1000, 140);
+  ctx.fillStyle = '#8b7355'; ctx.font = '600 40px system-ui, sans-serif';
+  ctx.fillText(subtitle || 'DIGITAL PRODUCT COLLECTION', 1000, 230);
+  ctx.fillStyle = 'rgba(61,43,31,0.4)'; ctx.font = '600 40px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('◆  INSTANT DOWNLOAD  ◆', 1000, 1900);
+  applyGlobalWatermark(ctx); return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+async function renderCompositeSplitH(imageSrcs: string[], title: string, subtitle: string): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+  ctx.fillStyle = '#fefefe'; ctx.fillRect(0, 0, 2000, 2000);
+  const stripe = ctx.createLinearGradient(0, 0, 2000, 0);
+  stripe.addColorStop(0, '#7c3aed'); stripe.addColorStop(1, '#ec4899');
+  ctx.fillStyle = stripe; ctx.fillRect(0, 0, 2000, 14);
+  const imgs: HTMLImageElement[] = [];
+  for (const src of imageSrcs.slice(0, 3)) { try { imgs.push(await loadImage(src)); } catch { /* skip */ } }
+  if (imgs.length > 0) {
+    const count = Math.min(3, imgs.length), gap = 30, pad = 80;
+    const cellW = (2000 - pad * 2 - gap * (count - 1)) / count, cellH = 1300, startY = 400;
+    for (let i = 0; i < count; i++) {
+      const x = pad + i * (cellW + gap), img = imgs[i];
+      ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
+      ctx.fillStyle = '#f0f0f0'; drawRoundedRect(ctx, x - 4, startY - 4, cellW + 8, cellH + 8, 20); ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.save(); drawRoundedRect(ctx, x, startY, cellW, cellH, 16); ctx.clip();
+      const s = Math.max(cellW / img.width, cellH / img.height);
+      ctx.drawImage(img, x + cellW / 2 - img.width * s / 2, startY + cellH / 2 - img.height * s / 2, img.width * s, img.height * s);
+      ctx.restore();
+    }
+  }
+  ctx.fillStyle = '#1a1a2e'; ctx.font = '900 110px system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(title.toUpperCase(), 1000, 210);
+  ctx.fillStyle = '#6b7280'; ctx.font = '600 42px system-ui, sans-serif';
+  ctx.fillText(subtitle || 'DIGITAL PRODUCT · INSTANT DOWNLOAD', 1000, 320);
+  ctx.fillStyle = '#374151'; ctx.font = '700 48px system-ui, sans-serif';
+  ctx.fillText('✦  COLLECTION  ✦', 1000, 1870);
+  ctx.fillStyle = stripe; ctx.fillRect(0, 1986, 2000, 14);
+  applyGlobalWatermark(ctx); return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+async function renderCompositeStrip(imageSrcs: string[], title: string, subtitle: string): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+  ctx.fillStyle = '#0d0d0d'; ctx.fillRect(0, 0, 2000, 2000);
+  const imgs: HTMLImageElement[] = [];
+  for (const src of imageSrcs.slice(0, 5)) { try { imgs.push(await loadImage(src)); } catch { /* skip */ } }
+  if (imgs.length > 0) {
+    const count = Math.min(5, imgs.length), stripH = 1050, stripY = 600, gap = 20, padX = 60;
+    const cellW = (2000 - padX * 2 - gap * (count - 1)) / count;
+    for (let i = 0; i < count; i++) {
+      const x = padX + i * (cellW + gap), img = imgs[i];
+      ctx.shadowColor = 'rgba(212,175,55,0.3)'; ctx.shadowBlur = 25;
+      ctx.fillStyle = '#2a2200'; ctx.fillRect(x - 4, stripY - 4, cellW + 8, stripH + 8); ctx.shadowBlur = 0;
+      ctx.save(); ctx.beginPath(); ctx.rect(x, stripY, cellW, stripH); ctx.clip();
+      const s = Math.max(cellW / img.width, stripH / img.height);
+      ctx.drawImage(img, x + cellW / 2 - img.width * s / 2, stripY + stripH / 2 - img.height * s / 2, img.width * s, img.height * s);
+      ctx.restore();
+      if (i < count - 1) { ctx.fillStyle = '#d4af37'; ctx.fillRect(x + cellW + gap / 2 - 1, stripY, 2, stripH); }
+    }
+  }
+  ctx.fillStyle = '#d4af37'; ctx.font = '900 120px Georgia, serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(title.toUpperCase(), 1000, 320);
+  ctx.fillStyle = '#d4af37'; ctx.fillRect(800, 390, 400, 4);
+  ctx.fillStyle = 'rgba(212,175,55,0.7)'; ctx.font = '600 46px system-ui, sans-serif';
+  ctx.fillText(subtitle || 'PREMIUM DIGITAL COLLECTION', 1000, 460);
+  ctx.fillStyle = 'rgba(212,175,55,0.08)'; ctx.fillRect(0, 1750, 2000, 250);
+  ctx.fillStyle = 'rgba(212,175,55,0.6)'; ctx.font = '600 40px system-ui, sans-serif';
+  ctx.fillText('✦  INSTANT DOWNLOAD  ·  HIGH QUALITY  ·  DIGITAL FILES  ✦', 1000, 1880);
+  applyGlobalWatermark(ctx); return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+async function renderCompositeHeroThumb(imageSrcs: string[], title: string, subtitle: string): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+  const bg = ctx.createLinearGradient(0, 0, 0, 2000);
+  bg.addColorStop(0, '#f8fafc'); bg.addColorStop(1, '#e2e8f0');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, 2000, 2000);
+  const imgs: HTMLImageElement[] = [];
+  for (const src of imageSrcs.slice(0, 4)) { try { imgs.push(await loadImage(src)); } catch { /* skip */ } }
+  if (imgs.length > 0) {
+    const heroX = 80, heroY = 350, heroW = 1100, heroH = 1400;
+    ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+    ctx.fillStyle = '#e2e8f0'; drawRoundedRect(ctx, heroX - 8, heroY - 8, heroW + 16, heroH + 16, 24); ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.save(); drawRoundedRect(ctx, heroX, heroY, heroW, heroH, 20); ctx.clip();
+    const hs = Math.max(heroW / imgs[0].width, heroH / imgs[0].height);
+    ctx.drawImage(imgs[0], heroX + heroW / 2 - imgs[0].width * hs / 2, heroY + heroH / 2 - imgs[0].height * hs / 2, imgs[0].width * hs, imgs[0].height * hs);
+    ctx.restore();
+    const thumbCount = Math.min(3, imgs.length - 1);
+    if (thumbCount > 0) {
+      const thumbX = 1260, thumbGap = 30, thumbW = 660;
+      const thumbH = (heroH - thumbGap * (thumbCount - 1)) / thumbCount;
+      for (let i = 0; i < thumbCount; i++) {
+        const img = imgs[i + 1], ty = heroY + i * (thumbH + thumbGap);
+        ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 8;
+        ctx.fillStyle = '#e2e8f0'; drawRoundedRect(ctx, thumbX - 4, ty - 4, thumbW + 8, thumbH + 8, 16); ctx.fill();
+        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        ctx.save(); drawRoundedRect(ctx, thumbX, ty, thumbW, thumbH, 14); ctx.clip();
+        const ts = Math.max(thumbW / img.width, thumbH / img.height);
+        ctx.drawImage(img, thumbX + thumbW / 2 - img.width * ts / 2, ty + thumbH / 2 - img.height * ts / 2, img.width * ts, img.height * ts);
+        ctx.restore();
+      }
+    }
+  }
+  const titleGrad = ctx.createLinearGradient(0, 0, 2000, 0);
+  titleGrad.addColorStop(0, '#4f46e5'); titleGrad.addColorStop(1, '#7c3aed');
+  ctx.fillStyle = titleGrad; ctx.font = '900 100px system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(title.toUpperCase(), 1000, 180);
+  ctx.fillStyle = '#64748b'; ctx.font = '600 42px system-ui, sans-serif';
+  ctx.fillText(subtitle || 'PREMIUM DIGITAL BUNDLE · INSTANT DOWNLOAD', 1000, 285);
+  applyGlobalWatermark(ctx); return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+async function renderCompositeDiagonal(imageSrcs: string[], title: string, subtitle: string): Promise<string> {
+  const [canvas, ctx] = createCanvas();
+  const bg = ctx.createLinearGradient(0, 0, 2000, 2000);
+  bg.addColorStop(0, '#0f172a'); bg.addColorStop(1, '#1e293b');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, 2000, 2000);
+  const imgs: HTMLImageElement[] = [];
+  for (const src of imageSrcs.slice(0, 3)) { try { imgs.push(await loadImage(src)); } catch { /* skip */ } }
+  if (imgs.length > 0) {
+    const count = Math.min(3, imgs.length), sliceW = 2000 / count + 200, skew = 120;
+    for (let i = 0; i < count; i++) {
+      const img = imgs[i], x = i * (2000 / count) - 100;
+      ctx.save(); ctx.beginPath();
+      ctx.moveTo(x + (i === 0 ? 0 : skew), 0);
+      ctx.lineTo(x + sliceW + (i === count - 1 ? 200 : 0), 0);
+      ctx.lineTo(x + sliceW - (i === count - 1 ? 0 : skew) + (i === count - 1 ? 200 : 0), 2000);
+      ctx.lineTo(x, 2000); ctx.closePath(); ctx.clip();
+      const s = Math.max(sliceW / img.width, 2000 / img.height);
+      ctx.globalAlpha = 0.85;
+      ctx.drawImage(img, x + sliceW / 2 - img.width * s / 2, 1000 - img.height * s / 2, img.width * s, img.height * s);
+      ctx.globalAlpha = 1; ctx.restore();
+      if (i < count - 1) {
+        const divX = x + sliceW - skew;
+        const lineGrad = ctx.createLinearGradient(divX, 0, divX + skew, 2000);
+        lineGrad.addColorStop(0, 'rgba(255,255,255,0)'); lineGrad.addColorStop(0.5, 'rgba(255,255,255,0.6)'); lineGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.strokeStyle = lineGrad; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(divX, 0); ctx.lineTo(divX + skew, 2000); ctx.stroke();
+      }
+    }
+    const topGrad = ctx.createLinearGradient(0, 0, 0, 400);
+    topGrad.addColorStop(0, 'rgba(15,23,42,0.9)'); topGrad.addColorStop(1, 'rgba(15,23,42,0)');
+    ctx.fillStyle = topGrad; ctx.fillRect(0, 0, 2000, 400);
+    const btmGrad = ctx.createLinearGradient(0, 1700, 0, 2000);
+    btmGrad.addColorStop(0, 'rgba(15,23,42,0)'); btmGrad.addColorStop(1, 'rgba(15,23,42,0.9)');
+    ctx.fillStyle = btmGrad; ctx.fillRect(0, 1700, 2000, 300);
+  }
+  ctx.fillStyle = '#ffffff'; ctx.font = '900 120px Georgia, serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 30;
+  ctx.fillText(title.toUpperCase(), 1000, 180); ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = '600 46px system-ui, sans-serif';
+  ctx.fillText(subtitle || 'DIGITAL COLLECTION', 1000, 300);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '700 44px system-ui, sans-serif';
+  ctx.fillText('✦  INSTANT DOWNLOAD  ✦', 1000, 1900);
+  applyGlobalWatermark(ctx); return canvas.toDataURL('image/jpeg', 0.95);
+}
+
+// ============================================================
 // BATCH GENERATOR
 // ============================================================
 
@@ -915,14 +1136,40 @@ export async function generateBatchMockups(
   fileFormats?: string,
   paperSizes?: string,
   onProgress?: (index: number, total: number) => void,
-  productStyle: 'digital-planner' | 'planner-utility' = 'digital-planner'
+  productStyle: 'digital-planner' | 'planner-utility' | 'composite' = 'digital-planner'
 ): Promise<string[]> {
   const generated: string[] = [];
   const hasCollection = (allImageSrcs && allImageSrcs.length >= 2);
   const hasShowcase = (allImageSrcs && allImageSrcs.length >= 3);
 
+  // === COMPOSITE: runs 6 collage/composite layout mockups ===
+  if (productStyle === 'composite') {
+    if (!hasCollection || !allImageSrcs) {
+      throw new Error('Composite mode requires at least 2 uploaded images.');
+    }
+    const title = showcaseTitle || 'My Collection';
+    const subtitle = showcaseSubtitle || 'DIGITAL COLLECTION · INSTANT DOWNLOAD';
+    const runners: Array<() => Promise<string>> = [
+      () => renderCompositeMosaic(allImageSrcs, title, subtitle),
+      () => renderCompositePolaroid(allImageSrcs, title, subtitle),
+      () => renderCompositeSplitH(allImageSrcs, title, subtitle),
+      () => renderCompositeStrip(allImageSrcs, title, subtitle),
+      () => renderCompositeHeroThumb(allImageSrcs, title, subtitle),
+      () => renderCompositeDiagonal(allImageSrcs, title, subtitle),
+    ];
+    for (let i = 0; i < runners.length; i++) {
+      try {
+        const url = await runners[i]();
+        generated.push(url);
+      } catch (e) { console.error(`Composite renderer ${i + 1} failed`, e); }
+      if (onProgress) onProgress(i + 1, runners.length);
+    }
+    return generated;
+  }
+
   // === PLANNER UTILITY: only runs Collection-style mockups ===
   if (productStyle === 'planner-utility') {
+
     if (!hasCollection || !allImageSrcs) {
       throw new Error('Planner Utility requires at least 2 uploaded images.');
     }

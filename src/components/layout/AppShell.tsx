@@ -34,7 +34,15 @@ export function AppShell() {
                     <p className="text-sm">Upload <strong>2 or more pages</strong> of your product on the left panel. The system will generate Fan, Grid and Diagonal collection mockups automatically.</p>
                     {images.length > 0 && <p className="text-xs mt-3 text-orange-300">{images.length} image{images.length !== 1 ? 's' : ''} ready ✓ — press Generate!</p>}
                   </>
+                ) : productStyle === 'composite' ? (
+                  <>
+                    <div className="text-5xl mb-4">🎨</div>
+                    <h3 className="text-lg font-medium mb-2 text-pink-400">Composite Image Mode</h3>
+                    <p className="text-sm">Upload <strong>2–6 images</strong> of your product. The system will generate 6 stunning composite layouts: Mosaic Grid, Polaroid Stack, Split Horizontal, Gold Strip, Hero + Thumbnails, and Diagonal Slice.</p>
+                    {images.length > 0 && <p className="text-xs mt-3 text-pink-300">{images.length} image{images.length !== 1 ? 's' : ''} ready ✓ — press Generate Composite Mockups!</p>}
+                  </>
                 ) : (
+
                   <>
                     <h3 className="text-lg font-medium mb-2">No Image Selected</h3>
                     <p className="text-sm">Upload an image from the left panel to begin editing.</p>

@@ -109,8 +109,8 @@ export type EditorState = {
   setShowcaseSubtitle: (text: string) => void
   setFileFormats: (text: string) => void
   setPaperSizes: (text: string) => void
-  productStyle: 'digital-planner' | 'planner-utility'
-  setProductStyle: (style: 'digital-planner' | 'planner-utility') => void
+  productStyle: 'digital-planner' | 'planner-utility' | 'composite'
+  setProductStyle: (style: 'digital-planner' | 'planner-utility' | 'composite') => void
 
   addImages: (newImages: ImageItem[]) => void
   setActiveImage: (id: string, analysis?: ImageAnalysisResult) => void
@@ -170,7 +170,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   aiImageUrl: null,
   batchMockups: [],
   isBatchGenerating: false,
-  productStyle: 'digital-planner' as const,
+  productStyle: 'digital-planner' as ('digital-planner' | 'planner-utility' | 'composite'),
   infographicText: '🌟 Features:\n- Premium Template\n- Editable in Canva\n- Instant Download',
   youWillGetText: '🎁 WHAT YOU WILL GET:\n- 1x PDF Planner\n- 500+ Digital Stickers\n- Covers & Widgets',
   showcaseTitle: 'All-In-One Digital Planner',
