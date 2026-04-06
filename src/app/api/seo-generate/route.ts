@@ -58,10 +58,18 @@ export async function POST(req: NextRequest) {
       'RULES: ' +
       '1) Front-load the exact main keyword at the very start. ' +
       '2) Add 5-8 strong long-tail phrases separated by | or commas or -. ' +
-      '3) Keep adding phrases until the string is very close to 140 chars. A title under 130 chars is rejected. ' +
+      '3) Keep adding phrases until the string is very close to 140 chars. A title under 130 chars is REJECTED. ' +
       '4) Use 1-2 emojis like \u2728 or \ud83d\udc96. ' +
-      '5) ETSY ALL-CAPS RULE: Do NOT use more than 3 consecutive words in ALL CAPS in any segment. Use Title Case (e.g. "Digital Planner" NOT "DIGITAL PLANNER"). ' +
-      '6) FORBIDDEN CHARACTERS: Never use $ ^ ` (backtick) in the title — Etsy will reject the listing.';
+      '5) ETSY ALL-CAPS RULE: Do NOT use more than 3 consecutive words in ALL CAPS. Use Title Case. ' +
+      '6) FORBIDDEN CHARACTERS: Never use $ ^ ` (backtick). ' +
+      '7) SYNONYM DIVERSITY (CRITICAL): Every time you generate a title you MUST use DIFFERENT synonym phrases — rotate among alternatives like: ' +
+      '"Instant Download" / "Digital Download" / "Printable File" / "Editable Template", ' +
+      '"Goodnotes Compatible" / "iPad Planner" / "Notability Ready", ' +
+      '"Aesthetic Design" / "Minimalist Style" / "Modern Layout" / "Boho Chic", ' +
+      '"Productivity Tool" / "Daily Organizer" / "Life Planner" / "Goal Tracker", ' +
+      '"Canva Template" / "Fully Editable" / "Customizable" / "Easy to Edit", ' +
+      '"Gift for Her" / "Self Care Planner" / "Wellness Tracker" / "Mindful Living". ' +
+      'NEVER reuse the same phrase combination as before. Mix and match creatively every single generation.';
 
     const systemPrompt =
       'You are a top-tier Etsy SEO expert and professional copywriter.\n' +
@@ -85,9 +93,18 @@ export async function POST(req: NextRequest) {
         model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Keyword: ' + keyword },
+          {
+            role: 'user',
+            content:
+              'Keyword: ' +
+              keyword +
+              '\n\n[Variation seed: ' +
+              Math.random().toString(36).slice(2, 8) +
+              ' — generate a UNIQUE title with DIFFERENT synonym phrases than any previous response. Rotate your word choices creatively.]',
+          },
         ],
-        temperature: 0.7,
+        temperature: 1.1,
+        top_p: 0.95,
         max_tokens: 4000,
         response_format: { type: 'json_object' },
       }),
