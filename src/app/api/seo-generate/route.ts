@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       '\nReturn ONLY a valid JSON object with exact structure:\n' +
       '{\n' +
       '  "title": "' + titleRules + '",\n' +
-      '  "description": "Expert Etsy copywriter for feminine digital products. Write a VERY LONG, EXHAUSTIVE listing description (1500+ words). Tone: feminine, soft premium, deeply helpful. Structure: 1) Hook & Opening paragraph 2) WHAT YOU\'LL RECEIVE (detailed breakdown) 3) DEEP DIVE FEATURES (bullet point every single small detail) 4) WHY YOU\'LL LOVE IT (emotional benefits) 5) PERFECT FOR (target audience scenarios) 6) HOW IT WORKS (step-by-step guide) 7) COMPATIBILITY 8) FAQ (make up 3 common questions) 9) IMPORTANT DETAILS 10) PLEASE NOTE 11) Closing line. Rules: SEO-friendly, highly skimmable but very lengthy, buyer-confident, explicitly state digital-only policy and no-refund. Every bullet MUST start with a relevant emoji. Expand heavily on every section.",\n' +
+      '  "description": "Expert Etsy copywriter for feminine digital products. Write a VERY LONG, EXHAUSTIVE listing description (1500+ words). Tone: feminine, soft premium, deeply helpful. Structure: 1) Hook & Opening paragraph 2) WHAT YOU\'LL RECEIVE (detailed breakdown) 3) DEEP DIVE FEATURES (bullet point every single small detail) 4) WHY YOU\'LL LOVE IT (emotional benefits) 5) PERFECT FOR (target audience scenarios) 6) HOW IT WORKS (step-by-step guide) 7) COMPATIBILITY 8) FAQ (make up 3 common questions) 9) OPTIMIZED ITEM DESCRIPTION (Write a massive, extremely dense 400-word paragraph filled naturally with tons of long-tail keywords, synonyms, and search phrases seamlessly woven together for Etsy algorithm ranking) 10) IMPORTANT DETAILS 11) PLEASE NOTE 12) Closing line. Rules: SEO-friendly, highly skimmable but very lengthy, buyer-confident, explicitly state digital-only policy and no-refund. Every bullet MUST start with a relevant emoji. Expand heavily on every section.",\n' +
       '  "hashtags": "Exactly 13 highly relevant Etsy tags separated by commas. Each tag must be 20 characters or less."\n' +
       '}\n' +
       'Do not include any other text, markdown blocks, or explanations.';
@@ -211,6 +211,20 @@ function mockFallback(keyword: string) {
     '3. Download the PDF instructions.\n' +
     '4. Click the link inside the PDF to access your files or template.\n' +
     '5. Import to your favorite app or start customizing immediately!\n\n' +
+    '\u2501'.repeat(30) + '\n\n' +
+    '\ud83d\udd0d OPTIMIZED ITEM DESCRIPTION:\n\n' +
+    'If you have been looking for the ultimate ' + kw + ', digital planner, aesthetic canva template, or productivity tool, ' +
+    'this digital download is the perfect fit for your lifestyle. Whether you need an editable planner, goodnotes template, ' +
+    'notability insert, or just a simple printable pdf to keep your life organized, our premium offering provides everything ' +
+    'required for goal setting, daily planning, weekly schedules, and monthly overviews. Modern women, students, business owners, ' +
+    'and creatives love using our customizable layouts to track their habits, manage finances, practice self-care, and stay ' +
+    'on top of their busy routines. This aesthetic minimalist design is a fantastic gift for her, a reliable life organizer, ' +
+    'and an essential productivity tracker. Easily imported into top annotation apps like Goodnotes 5, Goodnotes 6, Xodo, and ' +
+    'Noteshelf on your iPad, Mac, or Android tablet, it syncs seamlessly with your workflow. For those preferring physical copies, ' +
+    'this high-quality ' + kw + ' is perfectly formatted as a print-at-home digital printable. Designed with a calming soft pastel ' +
+    'color palette and boho chic style, it turns mundane tasks into a luxurious experience. Boost your focus, crush your professional goals, ' +
+    'nurture your mental health, and transform your daily habits utilizing our extensively thoroughly crafted digital assets designed ' +
+    'specifically for ambitious, organized individuals looking for the best planner template download available on Etsy today.\n\n' +
     '\u2501'.repeat(30) + '\n\n' +
     '\u26a0\ufe0f PLEASE NOTE:\n\n' +
     '\ud83d\udeab This is a DIGITAL PRODUCT — no physical item will be shipped\n' +
