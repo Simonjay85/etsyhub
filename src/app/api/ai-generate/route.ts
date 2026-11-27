@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { guardAiRequest, readJsonBody } from '@/lib/api-guard';
 
 export async function POST(req: NextRequest) {
-  const { prompt, fileType } = await req.json();
+  const blocked = guardAiRequest(req);
+  if (blocked) return blocked;
+
+  const body = await readJsonBody(req);
+  if (!body) {
+    return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
+  }
+  const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+  const fileType = body.fileType;
+  if (!prompt) {
+    return NextResponse.json({ error: 'prompt is required' }, { status: 400 });
+  }
+  if (prompt.length > 2000) {
+    return NextResponse.json({ error: 'prompt must be 2000 characters or fewer' }, { status: 400 });
+  }
+  if (fileType !== 'excel' && fileType !== 'pdf') {
+    return NextResponse.json({ error: "fileType must be 'excel' or 'pdf'" }, { status: 400 });
+  }
 
   const apiKey = process.env.OPENAI_API_KEY;
 

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+const SETTINGS_KEY = 'etsyhub_settings';
 import {
   Key, Store, Palette, Bell, Save, CheckCircle2,
   Eye, EyeOff, ExternalLink, Zap, Globe, Package,
@@ -69,11 +71,34 @@ export default function SettingsPage() {
   const [emailNotify, setEmailNotify] = useState(true);
   const [email, setEmail] = useState('');
 
+  useEffect(() => {
+    let stored: Record<string, unknown> = {};
+    try {
+      stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    } catch {
+      return;
+    }
+    const str = (k: string, set: (v: string) => void) => { if (typeof stored[k] === 'string') set(stored[k] as string); };
+    const bool = (k: string, set: (v: boolean) => void) => { if (typeof stored[k] === 'boolean') set(stored[k] as boolean); };
+    str('openaiKey', setOpenaiKey);
+    str('etsyKey', setEtsyKey);
+    str('shopName', setShopName);
+    str('shopUrl', setShopUrl);
+    str('ownerName', setOwnerName);
+    str('defaultCurrency', setDefaultCurrency);
+    str('defaultNiche', setDefaultNiche);
+    bool('defaultBundle', setDefaultBundle);
+    bool('addWatermark', setAddWatermark);
+    str('defaultFont', setDefaultFont);
+    bool('emailNotify', setEmailNotify);
+    str('email', setEmail);
+  }, []);
+
   const handleSave = () => {
-    // In a real app, save to localStorage or API
-    localStorage.setItem('settings_openai_key', openaiKey);
-    localStorage.setItem('settings_shop_name', shopName);
-    localStorage.setItem('settings_default_niche', defaultNiche);
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      openaiKey, etsyKey, shopName, shopUrl, ownerName, defaultCurrency,
+      defaultNiche, defaultBundle, addWatermark, defaultFont, emailNotify, email,
+    }));
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -142,7 +167,7 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: openaiKey ? '#10b981' : '#6b7280' }} />
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {openaiKey ? 'Key configured — AI generation enabled' : 'No key — using mock content fallback'}
+                {openaiKey ? 'Key saved in this browser only' : 'No key saved'}
               </span>
               <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--accent-1)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 Get key <ExternalLink size={11} />
@@ -281,7 +306,7 @@ export default function SettingsPage() {
       {/* Save button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
         <button onClick={handleSave} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '11px 28px' }}>
-          {saved ? <><CheckCircle2 size={16} /> Saved!</> : <><Save size={16} /> Save Settings</>}
+          {saved ? <><CheckCircle2 size={16} /> Saved in this browser</> : <><Save size={16} /> Save Settings</>}
         </button>
       </div>
     </div>

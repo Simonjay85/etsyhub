@@ -57,7 +57,7 @@ export function UploadArea() {
     >
       <input {...getInputProps()} />
       <UploadCloud className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-      <p className="text-sm font-medium">Drag & drop your PLR images</p>
+      <p className="text-sm font-medium">Drag & drop your product images</p>
       <p className="text-xs text-muted-foreground mt-1">Supports JPG, PNG, WEBP up to 20MB.</p>
     </div>
   )

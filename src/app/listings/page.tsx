@@ -78,13 +78,13 @@ function ListingCard({ listing, onDelete }: { listing: Listing; onDelete: (id: s
           <Edit3 size={13} /> Edit
         </Link>
         {listing.status !== 'published' && (
-          <button style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.75rem', padding: '8px', borderRadius: '8px', cursor: 'pointer' }} className="btn-primary">
-            <ExternalLink size={13} /> Publish
+          <button type="button" disabled title="Publishing to Etsy requires connecting your Etsy shop, which is not available yet." style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.75rem', padding: '8px', borderRadius: '8px', cursor: 'not-allowed', opacity: 0.55, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
+            <ExternalLink size={13} /> Publish (coming soon)
           </button>
         )}
         {listing.status === 'published' && (
-          <button style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.75rem', padding: '8px', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', cursor: 'pointer' }}>
-            <ExternalLink size={13} /> View on Etsy
+          <button type="button" disabled title="Sample listing — it is not linked to a real Etsy listing." style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.75rem', padding: '8px', borderRadius: '8px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981', cursor: 'not-allowed', opacity: 0.55 }}>
+            <ExternalLink size={13} /> Not linked to Etsy
           </button>
         )}
         <button onClick={() => onDelete(listing.id)} title="Delete" style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer' }}>
@@ -123,7 +123,7 @@ export default function Listings() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Etsy Listings</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Manage and publish your digital products.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Sample listings for demo purposes. Etsy shop connection is not available yet.</p>
         </div>
         <Link href="/studio" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
           <Plus size={16} /> Create Listing
@@ -131,7 +131,7 @@ export default function Listings() {
       </div>
 
       {/* Stats Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
         {stats.map(({ icon, label, value, color }) => (
           <div key={label} className="glass-panel" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: `${color}1a`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>{icon}</div>

@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "./components/Sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Etsy Creator Studio",
-  description: "Create and publish digital products to Etsy",
+  metadataBase: new URL(SITE_URL),
+  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
+  description: "Design Etsy digital product mockups and generate listing copy.",
 };
 
 export default function RootLayout({

@@ -26,7 +26,7 @@ export async function processImageWithNanoBanana(
     // For local development mockup (if API key is missing),
     // we simulate network latency and return nothing or throw error
     await new Promise(res => setTimeout(res, 2500))
-    throw new Error("Missing Nano Banana Pro API Key. Please add NANO_BANANA_API_KEY to .env.local")
+    throw new Error("AI inpaint is not configured on this server yet.")
   }
 
   try {
@@ -64,6 +64,6 @@ export async function processImageWithNanoBanana(
 
   } catch (error: any) {
     console.error("Nano Banana API Error:", error.message)
-    throw new Error(error.message || "An unexpected error occurred while communicating with Nano Banana Pro.")
+    throw new Error(error.message || "AI inpaint failed. Please try again later.")
   }
 }

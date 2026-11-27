@@ -16,10 +16,10 @@ export function AppShell() {
   return (
     <div className="flex h-full w-full flex-col bg-background text-foreground overflow-hidden rounded-xl border">
       <TopBar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col md:flex-row overflow-y-auto md:overflow-hidden">
         <LeftSidebar />
         
-        <main className="flex-1 overflow-hidden relative bg-secondary/30">
+        <main className="flex-1 min-h-[320px] overflow-hidden relative bg-secondary/30">
           {batchMockups.length > 0 ? (
             <BatchResultsGrid />
           ) : sourceImage ? (

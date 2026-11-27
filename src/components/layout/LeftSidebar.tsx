@@ -217,7 +217,7 @@ export function LeftSidebar() {
   }, [sourceImage, analysis, setAnalysis])
 
   return (
-    <aside className="w-80 border-r bg-card flex flex-col shrink-0 overflow-y-auto">
+    <aside className="w-full md:w-80 border-b md:border-b-0 md:border-r bg-card flex flex-col shrink-0 md:overflow-y-auto">
       <div className="p-4 space-y-4">
         
         {/* ─── PRODUCT STYLE SELECTOR ─── */}

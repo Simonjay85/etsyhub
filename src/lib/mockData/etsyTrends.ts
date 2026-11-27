@@ -17,9 +17,10 @@ export interface TrendingKeyword {
   competition: 'Low' | 'Medium' | 'High';
 }
 
-function generateMockProducts(count: number, baseRevenue: number): TrendingProduct[] {
+// Sample data only: links open an Etsy search for the product, not a specific listing.
+function generateMockProducts(count: number, baseRevenue: number, offset = 0): TrendingProduct[] {
   const titles = [
-    'That Girl Digital Planner 2024, iPad Goodnotes Planner',
+    'That Girl Digital Planner, iPad Goodnotes Planner',
     'Kawaii Sticker Bundle, Pre-cropped Goodnotes Stickers',
     'ADHD Digital Planner, Neurodivergent iPad Journal',
     'Dark Mode Minimalist Notebook, Notability Template',
@@ -33,12 +34,12 @@ function generateMockProducts(count: number, baseRevenue: number): TrendingProdu
   
   const shops = ['DaisyFlow', 'TemplyStudio', 'PaperlessAesthetic', 'TheDigitalGirl', 'KawaiiPlans'];
   
-  return Array.from({ length: count }).map((_, i) => ({
-    id: `prod_${Math.random().toString(36).substr(2, 9)}`,
-    title: titles[i % titles.length],
-    shopName: shops[i % shops.length],
-    shopLink: 'https://etsy.com',
-    productLink: 'https://etsy.com',
+  return Array.from({ length: Math.min(count, titles.length) }).map((_, i) => ({
+    id: `prod_${baseRevenue}_${i}`,
+    title: titles[(i + offset) % titles.length],
+    shopName: shops[(i + offset) % shops.length],
+    shopLink: `https://www.etsy.com/search?q=${encodeURIComponent(shops[(i + offset) % shops.length])}`,
+    productLink: `https://www.etsy.com/search?q=${encodeURIComponent(titles[(i + offset) % titles.length].split(',')[0])}`,
     estimatedRevenue: baseRevenue - (i * (baseRevenue / 20)),
     sales: Math.floor((baseRevenue - (i * (baseRevenue / 20))) / 15),
     thumbnail: `/thumbnails/thumb_${(i % 3) + 1}.png`
@@ -46,11 +47,11 @@ function generateMockProducts(count: number, baseRevenue: number): TrendingProdu
 }
 
 export const dailyTrends = generateMockProducts(10, 850);
-export const weeklyTrends = generateMockProducts(15, 5400);
-export const monthlyTrends = generateMockProducts(20, 24500);
+export const weeklyTrends = generateMockProducts(10, 5400, 3);
+export const monthlyTrends = generateMockProducts(10, 24500, 6);
 
 export const topKeywords: TrendingKeyword[] = [
-  { id: 'k1', keyword: 'digital planner 2024', searchVolume: 125000, trendPercentage: 15.4, competition: 'High' },
+  { id: 'k1', keyword: 'undated digital planner', searchVolume: 125000, trendPercentage: 15.4, competition: 'High' },
   { id: 'k2', keyword: 'goodnotes planner', searchVolume: 95000, trendPercentage: 8.2, competition: 'High' },
   { id: 'k3', keyword: 'adhd digital planner', searchVolume: 45000, trendPercentage: 35.6, competition: 'Medium' },
   { id: 'k4', keyword: 'dark mode journal', searchVolume: 28000, trendPercentage: 22.1, competition: 'Low' },
