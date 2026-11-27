@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { guardAiRequest, readJsonBody } from '@/lib/api-guard';
 
 /**
  * Etsy title sanitizer — applied to every generated title.
@@ -34,12 +35,23 @@ function sanitizeEtsyTitle(title: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const { keyword, referenceInfo } = await req.json();
+  const blocked = guardAiRequest(req);
+  if (blocked) return blocked;
 
-    if (!keyword) {
-      return NextResponse.json({ error: 'Keyword is required' }, { status: 400 });
-    }
+  const body = await readJsonBody(req);
+  if (!body) {
+    return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
+  }
+  const keyword = typeof body.keyword === 'string' ? body.keyword.trim() : '';
+  const referenceInfo = typeof body.referenceInfo === 'string' ? body.referenceInfo.slice(0, 5000) : '';
+  if (!keyword) {
+    return NextResponse.json({ error: 'Keyword is required' }, { status: 400 });
+  }
+  if (keyword.length > 200) {
+    return NextResponse.json({ error: 'Keyword must be 200 characters or fewer' }, { status: 400 });
+  }
+
+  try {
 
     const apiKey = process.env.OPENAI_API_KEY;
 

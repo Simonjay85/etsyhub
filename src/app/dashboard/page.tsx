@@ -25,10 +25,13 @@ export default function Dashboard() {
       {/* Header */}
       <div className="p-6 border-b border-white/5 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gradient mb-1">Etsy Market Spy</h1>
+          <h1 className="text-3xl font-bold text-gradient mb-1">Etsy Market Trends</h1>
           <p className="text-muted-foreground text-sm flex items-center gap-2">
             <Activity className="w-4 h-4 text-violet-400" />
-            Discover winning products and high-volume keywords on Etsy.
+            Explore example products and high-volume keywords for Etsy digital downloads.
+          </p>
+          <p className="mt-2 inline-block text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1">
+            Sample data — not live Etsy statistics
           </p>
         </div>
         
@@ -65,7 +68,7 @@ export default function Dashboard() {
                 <BarChart3 className="w-5 h-5 text-pink-400" />
                 Top Trending Products
               </h2>
-              <span className="text-xs text-muted-foreground">Showing top {activeProducts.length} results</span>
+              <span className="text-xs text-muted-foreground">{activeProducts.length} sample products</span>
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-white/5">
@@ -94,10 +97,10 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 text-muted-foreground hover:text-violet-400 transition-colors cursor-pointer">
+                        <a href={p.shopLink} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-violet-400 transition-colors" title={`Search Etsy for ${p.shopName}`}>
                           <Store className="w-3.5 h-3.5" />
                           <span className="truncate">{p.shopName}</span>
-                        </div>
+                        </a>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <p className="text-emerald-400 font-bold tracking-tight">${p.estimatedRevenue.toLocaleString()}</p>
@@ -107,7 +110,7 @@ export default function Dashboard() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                          <a href={p.productLink} target="_blank" rel="noreferrer" className="p-1.5 bg-white/5 hover:bg-violet-600 rounded-md transition-colors" title="View Listing">
+                          <a href={p.productLink} target="_blank" rel="noreferrer" className="p-1.5 bg-white/5 hover:bg-violet-600 rounded-md transition-colors" title="Search similar listings on Etsy" aria-label={`Search Etsy for ${p.title}`}>
                             <ExternalLink className="w-4 h-4" />
                           </a>
                         </div>
@@ -162,7 +165,7 @@ export default function Dashboard() {
             </div>
             
             <div className="mt-6 pt-4 border-t border-white/10 text-center">
-              <p className="text-xs text-muted-foreground">Data estimated from mock Etsy metrics.</p>
+              <p className="text-xs text-muted-foreground">Sample figures for illustration only.</p>
             </div>
           </div>
         </div>

@@ -12,7 +12,7 @@ export function RecommendationList() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold tracking-tight">AI Recommendations</h3>
+      <h3 className="text-sm font-semibold tracking-tight">Recommendations</h3>
       <div className="space-y-2">
         {recs.map(rec => (
           <div key={rec.id} className="flex gap-3 text-sm p-3 rounded-xl bg-secondary/40 border border-border/40">

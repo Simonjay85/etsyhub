@@ -131,7 +131,7 @@ export async function generatePreview(state: EditorState): Promise<string> {
       x = width - 20
     }
 
-    ctx.fillText('©TeemplySieStudio', x, y)
+    ctx.fillText('©TemplyStudio', x, y)
     ctx.restore()
   }
 

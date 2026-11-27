@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { 
   Search, Filter, ChevronDown, ChevronRight, HelpCircle, 
-  Download, Copy, Star, BookmarkPlus, Plus
+  Download, Copy, Plus
 } from 'lucide-react'
 
 // --- Mock Data Types ---
@@ -30,8 +30,12 @@ interface KeywordData {
 }
 
 // Sparkline helper
+let trendSeed = 7;
 function generateTrend() {
-  return Array.from({ length: 6 }, () => Math.floor(Math.random() * 100));
+  return Array.from({ length: 6 }, () => {
+    trendSeed = (trendSeed * 9301 + 49297) % 233280;
+    return Math.floor((trendSeed / 233280) * 100);
+  });
 }
 
 const mockKeywords: KeywordData[] = [
@@ -77,27 +81,94 @@ const mockKeywords: KeywordData[] = [
 ];
 
 export default function KeywordDatabase() {
-  const [query, setQuery] = useState('expend planner')
+  const [query, setQuery] = useState('')
+  const [activeQuery, setActiveQuery] = useState('')
   const [excludeKeyword, setExcludeKeyword] = useState('')
+  const [longTailOnly, setLongTailOnly] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [notice, setNotice] = useState('')
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set(["k1"]))
   const [filteredKeywords, setFilteredKeywords] = useState<KeywordData[]>(mockKeywords);
   const [isSearching, setIsSearching] = useState(false);
 
+  const applyFilters = (rawQuery: string, rawExclude: string, onlyLongTail: boolean) => {
+    const q = rawQuery.toLowerCase().trim();
+    const ex = rawExclude.toLowerCase().trim();
+    let results = [...mockKeywords];
+    if (q) results = results.filter(k => k.keyword.toLowerCase().includes(q));
+    if (ex) results = results.filter(k => !k.keyword.toLowerCase().includes(ex));
+    if (onlyLongTail) results = results.filter(k => k.isLongTail);
+    setFilteredKeywords(results);
+    setActiveQuery(rawQuery.trim());
+    setSelected(new Set());
+  }
+
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSearching(true);
-    
     setTimeout(() => {
-      const q = query.toLowerCase().trim();
-      const ex = excludeKeyword.toLowerCase().trim();
-      
-      let results = [...mockKeywords];
-      if (q) results = results.filter(k => k.keyword.toLowerCase().includes(q));
-      if (ex) results = results.filter(k => !k.keyword.toLowerCase().includes(ex));
-      
-      setFilteredKeywords(results);
+      applyFilters(query, excludeKeyword, longTailOnly);
       setIsSearching(false);
-    }, 500);
+    }, 300);
+  }
+
+  const clearQuery = () => {
+    setQuery('');
+    applyFilters('', excludeKeyword, longTailOnly);
+  }
+
+  const toggleLongTail = () => {
+    const next = !longTailOnly;
+    setLongTailOnly(next);
+    applyFilters(activeQuery, excludeKeyword, next);
+  }
+
+  const toggleSelected = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelected(next);
+  }
+
+  const allSelected = filteredKeywords.length > 0 && filteredKeywords.every(k => selected.has(k.id));
+  const toggleSelectAll = () => {
+    setSelected(allSelected ? new Set() : new Set(filteredKeywords.map(k => k.id)));
+  }
+
+  const exportRows = () => {
+    const rows = filteredKeywords.filter(k => selected.size === 0 || selected.has(k.id));
+    return rows;
+  }
+
+  const flash = (msg: string) => {
+    setNotice(msg);
+    setTimeout(() => setNotice(''), 2500);
+  }
+
+  const handleExportCsv = () => {
+    const rows = exportRows();
+    const header = ['Keyword', 'Competition', 'Views (total)', 'Favorites (total)', 'Sales (total)', 'Reviews (total)', 'Score', 'Long tail'];
+    const escape = (v: string | number | boolean) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [header, ...rows.map(k => [k.keyword, k.competition, k.views.total, k.favorites.total, k.sales.total, k.reviews.total, k.score, k.isLongTail ? 'yes' : 'no'])]
+      .map(line => line.map(escape).join(','))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'keyword-research.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    flash(`Exported ${rows.length} keyword${rows.length === 1 ? '' : 's'} to CSV.`);
+  }
+
+  const handleCopy = async () => {
+    const rows = exportRows();
+    try {
+      await navigator.clipboard.writeText(rows.map(k => k.keyword).join('\n'));
+      flash(`Copied ${rows.length} keyword${rows.length === 1 ? '' : 's'} to the clipboard.`);
+    } catch {
+      flash('Could not access the clipboard in this browser.');
+    }
   }
 
   const toggleRow = (id: string) => {
@@ -155,19 +226,19 @@ export default function KeywordDatabase() {
   return (
     <div className="h-full overflow-y-auto px-6 py-6 pb-24 text-sm max-w-[1600px] mx-auto">
       
-      {/* Top Notification */}
-      <div className="flex justify-center mb-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white mb-1">Keyword Research</h1>
         <p className="text-slate-400 text-xs">
-          Remaining keyword database searches for today: <strong className="text-white">4</strong>. <a href="#" className="text-blue-400 hover:underline">Upgrade to enjoy more searches</a>
+          Demo mode: results come from a small built-in sample dataset, not live Etsy search data.
         </p>
       </div>
 
       {/* Main Search Panel */}
       <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 mb-6 shadow-2xl">
-        <div className="flex items-center gap-4 mb-5">
+        <div className="flex flex-wrap items-center gap-4 mb-5">
           {/* Search Input */}
           {/* Search Input */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-xl relative flex items-center">
+          <form onSubmit={handleSearch} className="flex-1 min-w-[240px] max-w-xl relative flex items-center mr-4">
             <input 
               type="text" 
               value={query}
@@ -178,7 +249,8 @@ export default function KeywordDatabase() {
             {query && (
               <button 
                 type="button"
-                onClick={() => { setQuery(''); setFilteredKeywords(mockKeywords); }}
+                onClick={clearQuery}
+                aria-label="Clear search"
                 className="absolute right-2 text-slate-500 hover:text-white"
               >✕</button>
             )}
@@ -191,75 +263,78 @@ export default function KeywordDatabase() {
             </button>
           </form>
           
-          <div className="flex items-center gap-2 ml-4">
+ <form onSubmit={handleSearch} className="flex items-center gap-2">
             <Filter size={16} className="text-slate-400" />
             <input 
               type="text" 
+              aria-label="Exclude keywords containing" 
               placeholder="Exclude"
               value={excludeKeyword}
               onChange={(e) => setExcludeKeyword(e.target.value)}
               className="bg-transparent border-b border-white/10 text-white w-32 py-1 outline-none focus:border-slate-400 placeholder:text-slate-500"
             />
-          </div>
+          </form>
 
           <div className="flex-1"></div>
           
-          <button className="bg-[#f97316] text-white px-4 py-2 rounded-md font-medium text-sm shadow-lg shadow-orange-500/20">
+          <button type="button" disabled title="Coming soon" className="bg-[#f97316] text-white px-4 py-2 rounded-md font-medium text-sm opacity-50 cursor-not-allowed">
             Batch Keyword Analysis
-          </button>
-          <button className="border border-orange-500 text-orange-500 px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 hover:bg-orange-500/10">
-            <HelpCircle size={16} /> Tutorial
           </button>
         </div>
 
         {/* Selected Tags */}
         <div className="flex items-center gap-3 mb-5 border-b border-white/5 pb-4">
           <span className="text-slate-400">Selected :</span>
-          <div className="flex items-center gap-2 bg-slate-800 text-slate-300 px-3 py-1.5 rounded-full text-xs border border-white/5">
-            Search Keyword:{query} <button className="hover:text-white ml-1">✕</button>
-          </div>
+          {activeQuery ? (
+            <div className="flex items-center gap-2 bg-slate-800 text-slate-300 px-3 py-1.5 rounded-full text-xs border border-white/5">
+              Search Keyword: {activeQuery} <button type="button" onClick={clearQuery} aria-label="Remove search keyword" className="hover:text-white ml-1">✕</button>
+            </div>
+          ) : (
+            <span className="text-slate-500 text-xs">None</span>
+          )}
         </div>
 
         {/* Filters */}
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <span className="text-slate-400 w-20">Basic :</span>
             {['Competition', 'Views', 'Favorites', 'Sales', 'Reviews'].map(filter => (
-              <button key={filter} className="flex items-center justify-between bg-slate-800/80 border border-white/5 w-32 px-3 py-1.5 rounded text-left text-slate-300 hover:border-white/20 transition-colors">
+              <button key={filter} type="button" disabled title="Coming soon" className="flex items-center justify-between bg-slate-800/80 border border-white/5 w-32 px-3 py-1.5 rounded text-left text-slate-500 opacity-60 cursor-not-allowed">
                 {filter} <ChevronDown size={14} className="text-slate-500" />
               </button>
             ))}
           </div>
           <div className="flex items-center gap-4">
             <span className="text-slate-400 w-20">Advanced :</span>
-            <button className="flex items-center justify-between bg-slate-800/80 border border-white/5 w-32 px-3 py-1.5 rounded text-left text-slate-300 hover:border-white/20 transition-colors">
-              Long Tail <ChevronDown size={14} className="text-slate-500" />
+            <button type="button" onClick={toggleLongTail} aria-pressed={longTailOnly} className={`flex items-center justify-between border w-40 px-3 py-1.5 rounded text-left transition-colors ${longTailOnly ? 'bg-orange-500/20 border-orange-500 text-orange-300' : 'bg-slate-800/80 border-white/5 text-slate-300 hover:border-white/20'}`}>
+              Long tail only {longTailOnly ? '✓' : ''}
             </button>
           </div>
         </div>
       </div>
 
       {/* Datatable Section */}
-      <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl relative overflow-hidden">
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl relative overflow-x-auto">
         
         {/* Table Toolbar */}
-        <div className="flex items-center justify-between p-4 border-b border-white/5">
+        <div className="flex flex-wrap gap-3 items-center justify-between p-4 border-b border-white/5 min-w-[1200px]">
           <div className="text-slate-400 text-sm">
-            Find <span className="text-white font-semibold">43,592</span> keywords, show you the first 200
+            Showing <span className="text-white font-semibold">{filteredKeywords.length}</span> of {mockKeywords.length} sample keywords
+            {selected.size > 0 && <> · <span className="text-white">{selected.size}</span> selected</>}
+            {notice && <span className="ml-3 text-emerald-400" role="status">{notice}</span>}
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <button className="px-3 py-1.5 border border-white/10 rounded text-slate-300 hover:bg-white/5">Batch Keyword Analysis</button>
-            <button className="px-3 py-1.5 border border-white/10 rounded text-slate-300 hover:bg-white/5 flex items-center gap-1"><Plus size={14}/> Add to my favorites</button>
-            <button className="px-3 py-1.5 border border-white/10 rounded text-slate-300 hover:bg-white/5 flex items-center gap-1"><Plus size={14}/> Add to tracking</button>
-            <button className="px-3 py-1.5 border border-white/10 rounded text-slate-300 hover:bg-white/5 flex items-center gap-1"><Download size={14}/> Export to CSV</button>
-            <button className="px-3 py-1.5 border border-white/10 rounded text-slate-300 hover:bg-white/5 flex items-center gap-1"><Copy size={14}/> Copy</button>
+            <button type="button" disabled title="Coming soon" className="px-3 py-1.5 border border-white/10 rounded text-slate-500 opacity-60 cursor-not-allowed flex items-center gap-1"><Plus size={14}/> Add to my favorites</button>
+            <button type="button" disabled title="Coming soon" className="px-3 py-1.5 border border-white/10 rounded text-slate-500 opacity-60 cursor-not-allowed flex items-center gap-1"><Plus size={14}/> Add to tracking</button>
+            <button type="button" onClick={handleExportCsv} disabled={filteredKeywords.length === 0} className="px-3 py-1.5 border border-white/10 rounded text-slate-300 hover:bg-white/5 flex items-center gap-1 disabled:opacity-50"><Download size={14}/> Export to CSV</button>
+            <button type="button" onClick={handleCopy} disabled={filteredKeywords.length === 0} className="px-3 py-1.5 border border-white/10 rounded text-slate-300 hover:bg-white/5 flex items-center gap-1 disabled:opacity-50"><Copy size={14}/> Copy</button>
           </div>
         </div>
 
         {/* Table Header */}
-        <div className="grid grid-cols-[30px_30px_1fr_120px_160px_160px_160px_160px_80px_80px] text-xs font-semibold text-slate-300 border-b border-white/10 text-center py-3 bg-slate-800/30 px-4">
+        <div className="min-w-[1200px] grid grid-cols-[30px_30px_1fr_120px_160px_160px_160px_160px_80px_80px] text-xs font-semibold text-slate-300 border-b border-white/10 text-center py-3 bg-slate-800/30 px-4">
           <div></div>
-          <div><input type="checkbox" className="accent-orange-500 cursor-pointer" /></div>
+          <div><input type="checkbox" aria-label="Select all keywords" checked={allSelected} onChange={toggleSelectAll} className="accent-orange-500 cursor-pointer" /></div>
           <div className="text-left font-bold text-white px-2">Keywords</div>
           <div className="flex items-center justify-center gap-1">Competition <HelpCircle size={12} className="text-slate-500"/></div>
           <div className="flex flex-col">
@@ -286,10 +361,10 @@ export default function KeywordDatabase() {
         </div>
 
         {/* Table Body */}
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-[1200px]">
           {filteredKeywords.length === 0 ? (
             <div className="py-20 text-center text-slate-400">
-              No results found for "{query}". Try another keyword.
+              No results found{activeQuery ? ` for "${activeQuery}"` : ''}. Try another keyword.
             </div>
           ) : (
             filteredKeywords.map((item) => {
@@ -307,7 +382,7 @@ export default function KeywordDatabase() {
                   </div>
                   
                   {/* Checkbox */}
-                  <div><input type="checkbox" className="accent-orange-500 cursor-pointer" /></div>
+                  <div><input type="checkbox" aria-label={`Select ${item.keyword}`} checked={selected.has(item.id)} onChange={() => toggleSelected(item.id)} className="accent-orange-500 cursor-pointer" /></div>
                   
                   {/* Keyword */}
                   <div className="text-left font-medium text-white flex items-center gap-3 px-2">

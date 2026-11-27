@@ -19,6 +19,8 @@ export function TextControls() {
 
   const hasHeadline = analysis?.textRegions?.some(r => r.originalText.includes('DIGITAL PLANNER'))
   const hasBadge = analysis?.textRegions?.some(r => r.originalText.includes('BADGE') || r.originalText.includes('Badge'))
+  const hasBanner = analysis?.textRegions?.some(r => r.originalText.includes('REBRAND'))
+  const hasDetectedText = (analysis?.textRegions?.length ?? 0) > 0
 
   return (
     <div className="space-y-4">
@@ -62,6 +64,13 @@ export function TextControls() {
           </div>
         )}
 
+        {!hasDetectedText && (
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            No text was detected in this image, so there are no cleanup actions to apply.
+          </p>
+        )}
+
+        {hasDetectedText && (
         <div className="flex items-center justify-between">
           <Label htmlFor="keepMeaning" className="text-sm text-foreground/80 cursor-pointer opacity-40">Keep Original Meaning</Label>
           <Switch 
@@ -71,7 +80,9 @@ export function TextControls() {
             onCheckedChange={(c) => h('keepMeaning', c)} 
           />
         </div>
+        )}
         
+        {hasBanner && (
         <div className="flex items-start justify-between p-3 rounded-lg bg-slate-50 border border-slate-100 dark:bg-slate-900/20 dark:border-slate-800/50">
           <div className="space-y-1">
             <Label htmlFor="removeUnwanted" className="text-sm font-semibold tracking-tight cursor-pointer">Remove Subtitle Banner</Label>
@@ -85,8 +96,9 @@ export function TextControls() {
             onCheckedChange={(c) => h('removeUnwanted', c)} 
           />
         </div>
+        )}
 
-        {/* Nano Banana AI Integration */}
+        {/* AI inpaint integration */}
         <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/50">
           <button
             disabled={isProcessingAI || !sourceImage}
@@ -112,11 +124,11 @@ export function TextControls() {
             {isProcessingAI ? (
               <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/> Processing AI...</span>
             ) : (
-              <span>✨ Apply Nano Banana AI Inpaint</span>
+              <span>✨ Apply AI Inpaint</span>
             )}
           </button>
           <p className="text-[10px] text-center text-muted-foreground mt-2 opacity-60">
-            Powered by Nano Banana Pro API
+            Requires an image-editing API key on the server.
           </p>
         </div>
       </div>

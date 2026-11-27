@@ -154,6 +154,15 @@ a {
   z-index: 1;
 }
 
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 4.25rem 1rem 1rem;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

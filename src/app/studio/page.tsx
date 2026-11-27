@@ -11,10 +11,10 @@ export default function Studio() {
   return (
     <div className="flex flex-col grow min-h-0 h-full p-4">
       {/* Header Area */}
-      <div className="mb-4 flex justify-between items-end shrink-0">
+      <div className="mb-4 flex flex-wrap gap-3 justify-between items-end shrink-0">
         <div>
           <h1 className="text-gradient text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-400 mb-2">
-            Etsy Hub Studio
+            Design Studio
           </h1>
           <p className="text-slate-400 text-sm">
             Everything you need to produce & deploy Etsy listings and assets.
@@ -48,11 +48,13 @@ export default function Studio() {
           </button>
         </div>
 
-        <button 
-          className="btn-primary flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-xl font-semibold text-white transition-all active:scale-95"
-          onClick={() => alert('Publishing will sync with Etsy via OAuth!')}
+        <button
+          type="button"
+          disabled
+          title="Publishing to Etsy is not available yet. Export your files and upload them on Etsy."
+          className="flex items-center gap-2 px-6 py-2.5 bg-slate-800 border border-white/10 rounded-xl font-semibold text-slate-400 cursor-not-allowed opacity-70"
         >
-          Publish Listing
+          Publish to Etsy (coming soon)
         </button>
       </div>
 
